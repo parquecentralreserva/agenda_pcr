@@ -112,31 +112,60 @@ function logout() {
     location.reload(); 
 }
 
+/* --- FUNÇÕES DE PERFIL ATUALIZADAS --- */
 function openProfile() {
-    document.getElementById('prof-name').value = currentUser.name;
+    // Puxa os dados atuais do usuário
+    document.getElementById('prof-name').value = currentUser.name || '';
+    document.getElementById('prof-email').value = currentUser.email || '';
+    document.getElementById('prof-unit').value = currentUser.unit || '';
     document.getElementById('prof-pass').value = '';
+    
     const descInput = document.getElementById('prof-desc');
-    if(descInput) descInput.value = currentUser.desc || '';
+    const descLabel = document.getElementById('label-prof-desc');
+    
+    if(descInput) {
+        descInput.value = currentUser.desc || '';
+        
+        // Esconde o campo de especialidade se for morador
+        if (currentUser.role === 'morador') {
+            descInput.style.display = 'none';
+            if (descLabel) descLabel.style.display = 'none';
+        } else {
+            descInput.style.display = 'block';
+            if (descLabel) descLabel.style.display = 'block';
+        }
+    }
+    
     document.getElementById('modal-profile').style.display = 'flex';
 }
 
 async function saveProfile() {
     const newName = document.getElementById('prof-name').value;
+    const newEmail = document.getElementById('prof-email').value;
+    const newUnit = document.getElementById('prof-unit').value;
     const newPass = document.getElementById('prof-pass').value;
     const newDesc = document.getElementById('prof-desc') ? document.getElementById('prof-desc').value : currentUser.desc;
 
-    if(!newName) return showToast("Nome obrigatório");
+    // Trava para não deixar o usuário salvar perfil sem nome ou e-mail
+    if(!newName || !newEmail) return showToast("Nome e E-mail são obrigatórios");
     
+    // Atualiza os dados na memória
     currentUser.name = newName;
-    if(newPass) currentUser.pass = newPass;
-    currentUser.desc = newDesc;
+    currentUser.email = newEmail;
+    currentUser.unit = newUnit;
+    if(newPass) currentUser.pass = newPass; // Só atualiza a senha se ele digitou uma nova
     
+    if(currentUser.role === 'prof') currentUser.desc = newDesc;
+    
+    // Salva no banco de dados e atualiza a sessão
     await API.u.save(currentUser);
     sessionStorage.setItem('pcr_user', JSON.stringify(currentUser)); 
+    
     updateUserUI();
     showToast("Perfil atualizado!");
     document.getElementById('modal-profile').style.display = 'none';
 }
+/* ------------------------------------- */
 
 function updateUserUI() {
     document.getElementById('user-name').innerText = currentUser.name.split(' ')[0]; 
