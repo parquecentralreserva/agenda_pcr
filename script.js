@@ -1,135 +1,116 @@
-/* --- CONFIGURAÇÃO E ESTADO --- */
+/* --- ESTADO GLOBAL --- */
 let currentUser = null;
 let tempBk = {};
 const TIMES = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'];
 
-const getToday = () => new Date().toISOString().split('T')[0];
-const fmtDate = (s) => s.split('-').reverse().join('/');
-const getInitials = (n) => n ? n.substring(0, 2).toUpperCase() : '??';
-
-/* --- CHAMADAS AO BANCO D1 (API) --- */
+/* --- CONEXÃO COM A API (D1) --- */
 const API = {
-    getUsers: async () => {
-        const r = await fetch('/api/users');
-        return await r.json();
-    },
-    // Esta função serve tanto para CRIAR quanto para EDITAR (devido ao REPLACE no SQL)
-    saveUser: async (userData) => {
-        const r = await fetch('/api/users', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(userData)
-        });
-        return await r.json();
-    },
-    deleteUser: async (id) => {
-        await fetch(`/api/users?id=${id}`, { method: 'DELETE' });
-    },
-    getBookings: async () => {
-        const r = await fetch('/api/bookings');
-        return await r.json();
-    }
+    getUsers: () => fetch('/api/users').then(r => r.json()),
+    saveUser: (u) => fetch('/api/users', { 
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'}, 
+        body: JSON.stringify(u) 
+    }).then(r => r.json()),
+    getBookings: () => fetch('/api/bookings').then(r => r.json()),
+    saveBooking: (b) => fetch('/api/bookings', { 
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'}, 
+        body: JSON.stringify(b) 
+    }).then(r => r.json())
 };
 
-/* --- AUTENTICAÇÃO --- */
+/* --- FUNÇÃO DE CADASTRO INICIAL (MORADOR) --- */
+async function register() {
+    const n = document.getElementById('reg-name').value;
+    const u = document.getElementById('reg-unit').value;
+    const g = document.getElementById('reg-gender').value;
+    const e = document.getElementById('reg-email').value;
+    const p = document.getElementById('reg-pass').value;
+
+    if (!n || !e || !p) return alert("Preencha Nome, Email e Senha!");
+
+    const newUser = {
+        id: 'u' + Date.now(),
+        name: n,
+        unit: u,
+        gender: g,
+        email: e,
+        pass: p,
+        role: 'morador',
+        desc: ''
+    };
+
+    const res = await API.saveUser(newUser);
+    if (res.success) {
+        alert("Cadastro realizado! Agora faça login.");
+        toggleAuth('login');
+    } else {
+        alert("Erro ao cadastrar. Tente outro e-mail.");
+    }
+}
+
+/* --- LOGIN --- */
 async function login() {
     const e = document.getElementById('login-email').value;
     const p = document.getElementById('login-pass').value;
     
-    try {
-        const users = await API.getUsers();
-        const u = users.find(x => x.email === e && x.pass === p);
-        
-        if (u) {
-            currentUser = u;
-            document.getElementById('screen-auth').classList.add('hidden');
-            document.getElementById('screen-app').classList.remove('hidden');
-            updateUserUI();
-            loadView();
-        } else {
-            alert("E-mail ou senha incorretos.");
-        }
-    } catch (err) {
-        alert("Erro ao conectar com o banco de dados.");
+    const users = await API.getUsers();
+    const u = users.find(x => x.email === e && x.pass === p);
+    
+    if (u) {
+        currentUser = u;
+        document.getElementById('screen-auth').classList.add('hidden');
+        document.getElementById('screen-app').classList.remove('hidden');
+        updateUserUI();
+        loadView();
+    } else {
+        alert("Dados incorretos!");
     }
 }
 
-/* --- PERFIL (EDITAR MEUS DADOS) --- */
-function openProfile() {
-    document.getElementById('prof-name').value = currentUser.name;
-    document.getElementById('prof-pass').value = currentUser.pass;
-    document.getElementById('modal-profile').style.display = 'flex';
+/* --- ADMIN: CRIAR/EDITAR PROFISSIONAIS --- */
+async function adminSaveUser() {
+    const role = document.getElementById('adm-role').value;
+    const existingId = document.getElementById('adm-uid').value;
+
+    const u = {
+        id: existingId || 'u' + Date.now(),
+        name: document.getElementById('adm-name').value,
+        email: document.getElementById('adm-email').value,
+        pass: document.getElementById('adm-pass').value,
+        unit: document.getElementById('adm-unit').value,
+        gender: document.getElementById('adm-gender').value,
+        role: role,
+        desc: role === 'prof' ? 'Profissional PCR' : ''
+    };
+
+    if (!u.name || !u.email) return alert("Nome e Email são obrigatórios!");
+
+    const res = await API.saveUser(u);
+    if (res.success) {
+        alert("Salvo com sucesso no banco!");
+        document.getElementById('modal-admin-user').style.display = 'none';
+        renderAdmin(); // Recarrega a lista de usuários para o admin
+    }
 }
 
+/* --- PERFIL: EDITAR MEUS PRÓPRIOS DADOS --- */
 async function saveProfile() {
     const newName = document.getElementById('prof-name').value;
     const newPass = document.getElementById('prof-pass').value;
 
-    if (!newName || !newPass) return alert("Preencha todos os campos");
+    const updated = { ...currentUser, name: newName, pass: newPass };
 
-    // Criamos o objeto mantendo o ID e ROLE originais
-    const updatedData = {
-        ...currentUser,
-        name: newName,
-        pass: newPass
-    };
-
-    const res = await API.saveUser(updatedData);
+    const res = await API.saveUser(updated);
     if (res.success) {
-        currentUser = updatedData;
+        currentUser = updated;
         updateUserUI();
-        alert("Perfil atualizado com sucesso!");
+        alert("Perfil atualizado!");
         document.getElementById('modal-profile').style.display = 'none';
     }
 }
 
-/* --- ADMINISTRAÇÃO (CRIAR PROFISSIONAIS) --- */
-async function adminSaveUser() {
-    const role = document.getElementById('adm-role').value;
-    const idExistente = document.getElementById('adm-uid').value;
-
-    const u = {
-        id: idExistente || 'u' + Date.now(), // Se não tem ID, cria um novo
-        name: document.getElementById('adm-name').value,
-        email: document.getElementById('adm-email').value,
-        pass: document.getElementById('adm-pass').value,
-        role: role,
-        unit: document.getElementById('adm-unit').value,
-        gender: document.getElementById('adm-gender').value,
-        desc: role === 'prof' ? 'Especialista PCR' : ''
-    };
-
-    if (!u.name || !u.email || !u.pass) return alert("Nome, Email e Senha são obrigatórios.");
-
-    const res = await API.saveUser(u);
-    if (res.success) {
-        alert(role === 'prof' ? "Profissional salvo!" : "Usuário salvo!");
-        document.getElementById('modal-admin-user').style.display = 'none';
-        renderAdmin(); // Atualiza a lista na tela
-    }
-}
-
-async function renderAdmin() {
-    const users = await API.getUsers();
-    const list = document.getElementById('admin-user-list');
-    // Filtra para não mostrar o próprio admin na lista de edição comum
-    const filtered = users.filter(u => u.id !== currentUser.id);
-    
-    list.innerHTML = filtered.map(u => `
-        <div class="user-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee">
-            <div>
-                <strong>${u.name}</strong> <small>(${u.role})</small><br>
-                <span>${u.unit} | ${u.email}</span>
-            </div>
-            <div>
-                <button onclick="editUserPrompt('${u.id}')">Editar</button>
-                <button onclick="deleteUserAction('${u.id}')" style="color:red">Excluir</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-/* --- SUPORTE INTERFACE --- */
+/* --- AUXILIARES DE INTERFACE --- */
 function updateUserUI() {
     document.getElementById('user-name').innerText = currentUser.name.split(' ')[0];
     document.getElementById('pc-user-name').innerText = currentUser.name;
@@ -138,11 +119,40 @@ function updateUserUI() {
 
 function loadView() {
     const role = currentUser.role;
-    document.getElementById('view-admin').classList.toggle('hidden', role !== 'admin');
-    document.getElementById('view-morador').classList.toggle('hidden', role !== 'morador');
-    document.getElementById('view-prof').classList.toggle('hidden', role !== 'prof');
+    // Esconde todas as telas primeiro
+    ['view-admin', 'view-morador', 'view-prof'].forEach(v => {
+        const el = document.getElementById(v);
+        if(el) el.classList.add('hidden');
+    });
 
-    if (role === 'admin') renderAdmin();
+    // Mostra a tela correta
+    if (role === 'admin') {
+        document.getElementById('view-admin').classList.remove('hidden');
+        renderAdmin();
+    } else if (role === 'morador') {
+        document.getElementById('view-morador').classList.remove('hidden');
+        renderProfs();
+    } else if (role === 'prof') {
+        document.getElementById('view-prof').classList.remove('hidden');
+    }
+}
+
+async function renderAdmin() {
+    const users = await API.getUsers();
+    const container = document.getElementById('admin-user-list');
+    if (!container) return;
+
+    container.innerHTML = users.filter(u => u.id !== currentUser.id).map(u => `
+        <div class="user-card" style="border-bottom: 1px solid #ddd; padding: 10px; display: flex; justify-content: space-between;">
+            <div><b>${u.name}</b> (${u.role})</div>
+            <button onclick="editUser('${u.id}')">Editar</button>
+        </div>
+    `).join('');
+}
+
+function toggleAuth(mode) {
+    document.getElementById('form-login').classList.toggle('hidden', mode !== 'login');
+    document.getElementById('form-reg').classList.toggle('hidden', mode !== 'reg');
 }
 
 function logout() { location.reload(); }
