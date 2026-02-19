@@ -1,16 +1,12 @@
 export async function onRequest(context) {
   const { request, env } = context;
 
-  // Verifica se o D1 está vinculado corretamente
   if (!env.DB) {
-    return new Response(JSON.stringify({ error: "Binding 'DB' não configurado no painel da Cloudflare." }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    return new Response(JSON.stringify({ error: "Binding DB não encontrado" }), { status: 500 });
   }
 
   try {
-    // MÉTODO GET: Listar usuários
+    // LER USUÁRIOS
     if (request.method === "GET") {
       const { results } = await env.DB.prepare("SELECT * FROM usuarios").all();
       return new Response(JSON.stringify(results || []), {
@@ -18,47 +14,41 @@ export async function onRequest(context) {
       });
     }
 
-    // MÉTODO POST: Cadastrar usuário
+    // SALVAR OU EDITAR USUÁRIO
     if (request.method === "POST") {
       const u = await request.json();
-
-      // Log preventivo para o painel de controle (ajuda a achar erros)
-      console.log("Recebido para cadastro:", u);
-
-      // Executa o comando no banco usando os nomes das colunas que criamos no SQL
-      const resultado = await env.DB.prepare(`
+      
+      await env.DB.prepare(`
         INSERT OR REPLACE INTO usuarios (id, name, email, pass, unit, gender, role, desc)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `)
-      .bind(
-        u.id || `u${Date.now()}`, 
-        u.name || "Sem Nome", 
+      `).bind(
+        u.id, 
+        u.name, 
         u.email, 
-        u.pass || "123", 
-        u.unit || "N/A", 
-        u.gender || "M", 
+        u.pass, 
+        u.unit || "", 
+        u.gender || "", 
         u.role || "morador", 
         u.desc || ""
-      )
-      .run();
-
-      return new Response(JSON.stringify({ success: true, meta: resultado.meta }), {
-        status: 201,
-        headers: { "Content-Type": "application/json" }
+      ).run();
+      
+      return new Response(JSON.stringify({ success: true }), { 
+        status: 201, 
+        headers: { "Content-Type": "application/json" } 
       });
     }
 
-    return new Response("Método não permitido", { status: 405 });
+    // DELETAR USUÁRIO
+    if (request.method === "DELETE") {
+      const id = new URL(request.url).searchParams.get("id");
+      await env.DB.prepare("DELETE FROM usuarios WHERE id = ?").bind(id).run();
+      return new Response(null, { status: 204 });
+    }
 
-  } catch (error) {
-    // Este bloco impede o Erro 1101 e te mostra o erro real na tela
-    return new Response(JSON.stringify({ 
-      error: "Falha na operação", 
-      message: error.message,
-      stack: error.stack 
-    }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), { 
+      status: 500, 
+      headers: { "Content-Type": "application/json" } 
     });
   }
 }
