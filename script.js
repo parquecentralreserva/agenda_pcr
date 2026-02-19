@@ -113,7 +113,7 @@ async function register() {
     
     if(!n || !u || !g || !e || !p) return showToast('Preencha tudo');
     
-    const newUser = { id: 'u' + Date.now(), name: n, unit: u, gender: g, email: e, pass: p, role: 'morador', desc: '' };
+    const newUser = { id: 'u' + Date.now(), name: n, unit: u, gender: g, email: e, pass: p, role: 'morador', desc: '', maca: 0 };
     await API.u.save(newUser);
     
     showToast('Sucesso! Entre.'); 
@@ -124,17 +124,22 @@ function logout() { location.reload(); }
 
 function openProfile() {
     document.getElementById('prof-name').value = currentUser.name;
-    document.getElementById('prof-pass').value = '';
+    document.getElementById('prof-pass').value = currentUser.pass;
+    const descInput = document.getElementById('prof-desc');
+    if(descInput) descInput.value = currentUser.desc || '';
     document.getElementById('modal-profile').style.display = 'flex';
 }
 
 async function saveProfile() {
     const newName = document.getElementById('prof-name').value;
     const newPass = document.getElementById('prof-pass').value;
+    const newDesc = document.getElementById('prof-desc') ? document.getElementById('prof-desc').value : currentUser.desc;
+
     if(!newName) return showToast("Nome obrigatório");
     
     currentUser.name = newName;
     if(newPass) currentUser.pass = newPass;
+    currentUser.desc = newDesc;
     
     await API.u.save(currentUser);
     updateUserUI();
@@ -217,10 +222,28 @@ async function renderTimeGrid() {
     
     document.getElementById('grid-slots').innerHTML = TIMES.map(t => {
         const slot = bks.filter(b => b.date === d && b.time === t);
+        
+        // 1. O profissional escolhido já está ocupado?
         if(slot.find(b => b.profId === p.id)) return `<div class="time-slot blocked-prof">--</div>`;
+        
+        // 2. REGRA DA MACA: Se o profissional escolhido usa maca, checar se a sala com maca está ocupada
+        if(p.maca === 1) {
+            const macaOcupada = slot.some(b => {
+                if (b.type !== 'appt') return false; // Ignora bloqueios sem cliente
+                const profDoAgendamento = users.find(u => u.id === b.profId);
+                return profDoAgendamento && profDoAgendamento.maca === 1;
+            });
+            if(macaOcupada) return `<div class="time-slot" style="background:#fca5a5; color:#7f1d1d; cursor:not-allowed; border: 1px solid #f87171;">MACA EM USO</div>`;
+        }
+
+        // 3. REGRA DE GÊNERO
         const act = slot.find(b => b.type === 'appt');
         if(act && act.clientGender !== currentUser.gender) return `<div class="time-slot ${act.clientGender === 'M' ? 'blocked-male' : 'blocked-female'}">${act.clientGender === 'M' ? 'USO MASC' : 'USO FEM'}</div>`;
+        
+        // 4. Bloqueios manuais
         if(slot.find(b => b.type === 'block')) return `<div class="time-slot blocked-prof">BLOQ</div>`;
+        
+        // 5. Livre
         return `<div class="time-slot" onclick="selTime('${t}',this)">${t}</div>`;
     }).join('');
 }
@@ -306,7 +329,20 @@ async function renderAdminUsers() {
     const users = await API.u.get();
     const u = users.filter(x => x.role !== 'admin' && (x.name.toLowerCase().includes(s) || x.unit.toLowerCase().includes(s)));
     
-    document.getElementById('admin-user-list').innerHTML = u.map(x => `<div style="padding:15px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center"><div style="display:flex; gap:12px; align-items:center"><div class="avatar-box small">${getInitials(x.name)}</div><div><b style="font-size:0.95rem">${x.name}</b> <br><small style="color:var(--accent)">${x.unit} • ${x.role.toUpperCase()}</small></div></div><div style="display:flex;gap:8px"><button class="btn-ghost" style="padding:8px" onclick="adminEditUser('${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-ghost" style="padding:8px; color:#ef4444" onclick="delUser('${x.id}')"><i class="fa-solid fa-trash"></i></button></div></div>`).join('');
+    document.getElementById('admin-user-list').innerHTML = u.map(x => `
+        <div style="padding:15px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center">
+            <div style="display:flex; gap:12px; align-items:center">
+                <div class="avatar-box small">${getInitials(x.name)}</div>
+                <div>
+                    <b style="font-size:0.95rem">${x.name}</b> ${x.maca === 1 ? '<span style="font-size:10px; background:#fee2e2; color:#b91c1c; padding:2px 4px; border-radius:4px; margin-left:4px">MACA</span>' : ''}<br>
+                    <small style="color:var(--accent)">${x.unit} • ${x.role.toUpperCase()}</small>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="btn-ghost" style="padding:8px" onclick="adminEditUser('${x.id}')"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-ghost" style="padding:8px; color:#ef4444" onclick="delUser('${x.id}')"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>`).join('');
 }
 
 async function renderAdmin() {
@@ -318,7 +354,7 @@ async function renderAdmin() {
 
 async function adminEditUser(id) {
     document.getElementById('modal-admin-user').style.display = 'flex';
-    let u = { id: '', name: '', unit: '', email: '', pass: '', role: 'morador', gender: 'M' };
+    let u = { id: '', name: '', unit: '', email: '', pass: '', role: 'morador', gender: 'M', desc: '', maca: 0 };
     
     if (id) {
         const users = await API.u.get();
@@ -332,6 +368,11 @@ async function adminEditUser(id) {
     document.getElementById('adm-pass').value = u.pass; 
     document.getElementById('adm-role').value = u.role; 
     document.getElementById('adm-gender').value = u.gender;
+    
+    const descInput = document.getElementById('adm-desc');
+    const macaInput = document.getElementById('adm-maca');
+    if(descInput) descInput.value = u.desc || '';
+    if(macaInput) macaInput.checked = (u.maca === 1);
 }
 
 async function adminSaveUser() {
@@ -340,11 +381,14 @@ async function adminSaveUser() {
           r = document.getElementById('adm-role').value, g = document.getElementById('adm-gender').value, 
           id = document.getElementById('adm-uid').value;
           
-    if(!n || !u || !e || !p) return showToast('Preencha tudo');
+    const d = document.getElementById('adm-desc') ? document.getElementById('adm-desc').value : '';
+    const m = document.getElementById('adm-maca') && document.getElementById('adm-maca').checked ? 1 : 0;
+          
+    if(!n || !e || !p) return showToast('Preencha Nome, Email e Senha');
     
     const userToSave = {
         id: id || 'u' + Date.now(),
-        name: n, unit: u, email: e, pass: p, role: r, gender: g, desc: r === 'prof' ? 'Especialista' : ''
+        name: n, unit: u, email: e, pass: p, role: r, gender: g, desc: d, maca: m
     };
     
     await API.u.save(userToSave);
