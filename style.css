@@ -1,175 +1,202 @@
-/* =========================================================
-   1. VARIÁVEIS E RESET BÁSICO
-   ========================================================= */
 :root {
-    --primary: #0f172a;       /* Azul Escuro (Textos principais) */
-    --accent: #3b82f6;        /* Azul Vivo (Botões e destaques) */
-    --accent-hover: #2563eb;  /* Azul Hover */
-    --male-color: #2563eb;    /* Azul Masculino */
-    --female-color: #ec4899;  /* Rosa Feminino */
-    --danger: #ef4444;        /* Vermelho (Exclusões) */
-    --text-light: #64748b;    /* Cinza (Textos secundários) */
-    --bg-color: #f8fafc;      /* Fundo geral da tela */
-    --card-bg: #ffffff;       /* Fundo de elementos brancos */
-    --border-color: #e2e8f0;  /* Linhas e bordas */
+    --primary: #0f172a; 
+    --primary-light: #1e293b;
+    --accent: #c0a062; 
+    --accent-light: #f1e9db;
+    --bg-body: #f1f5f9; 
+    --surface: #ffffff;
+    --text-main: #1e293b; 
+    --text-light: #64748b;
+    
+    --female-color: #be185d; --female-bg: #fdf2f8; --female-border: #fbcfe8;
+    --male-color: #0369a1; --male-bg: #f0f9ff; --male-border: #bae6fd;
+    
+    --radius: 16px; 
+    --shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    --safe-bottom: env(safe-area-inset-bottom, 20px);
+    --sidebar-width: 280px;
+    --anim: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
-body { background: var(--bg-color); color: var(--primary); -webkit-font-smoothing: antialiased; }
+* { 
+    margin:0; padding:0; box-sizing:border-box; 
+    outline:none; -webkit-tap-highlight-color:transparent; 
+    font-family: 'Lato', sans-serif; 
+    word-wrap: break-word; overflow-wrap: break-word;
+}
 
-/* Classe utilitária essencial para o JS funcionar */
+body { background: var(--bg-body); color: var(--text-main); min-height: 100vh; }
+
+/* LAYOUT ADAPTÁVEL */
+.app-shell { 
+    width: 100%; min-height: 100vh; background: var(--bg-body); 
+    display: flex; flex-direction: column; 
+}
+
+@media (min-width: 1024px) {
+    .app-shell { flex-direction: row; }
+    .content-area { padding: 40px !important; }
+    .mobile-nav { display: none !important; }
+    .desktop-sidebar { display: flex !important; }
+    .mobile-header { display: none !important; }
+    .responsive-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+}
+
+.content-area { flex: 1; padding: 20px; padding-bottom: calc(100px + var(--safe-bottom)); }
+
+.desktop-sidebar { 
+    display: none; width: var(--sidebar-width); background: var(--primary); 
+    color: white; flex-direction: column; padding: 40px 24px; 
+    position: sticky; top: 0; height: 100vh;
+}
+
+.mobile-nav { 
+    position: fixed; bottom: 0; width: 100%; 
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); 
+    display: flex; justify-content: space-around; 
+    padding: 15px 0 calc(15px + var(--safe-bottom)) 0; 
+    border-top: 1px solid #e2e8f0; z-index: 100;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+}
+
+.mobile-header { 
+    padding: 20px 25px; padding-top: max(20px, env(safe-area-inset-top)); 
+    background: white; display: flex; justify-content: space-between; align-items: center; 
+    position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #e2e8f0; 
+}
+
+/* ELEMENTOS UI */
+h1, h2, h3, h4 { font-family: 'Cinzel', serif; font-weight: 700; color: var(--primary); }
 .hidden { display: none !important; }
+.fade-in { animation: fadeIn 0.5s var(--anim) forwards; }
+@keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 
-/* =========================================================
-   2. TELAS PRINCIPAIS E LAYOUT
-   ========================================================= */
-#screen-auth {
-    display: flex; align-items: center; justify-content: center;
-    min-height: 100vh; padding: 20px;
-}
-
-.auth-box {
-    background: var(--card-bg); width: 100%; max-width: 400px;
-    padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-}
-
-#screen-app {
-    display: flex; flex-direction: column; min-height: 100vh;
-}
-
-.main-container {
-    padding: 20px; max-width: 800px; margin: 0 auto; width: 100%;
-}
-
-/* =========================================================
-   3. FORMS, INPUTS E BOTÕES
-   ========================================================= */
-.input-field { 
-    width: 100%; padding: 14px; border: 1px solid var(--border-color); 
-    border-radius: 10px; margin-bottom: 12px; font-size: 1rem; 
-    background: #f8fafc; outline: none; transition: 0.2s;
-}
-.input-field:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-
-button { cursor: pointer; border: none; font-weight: 600; transition: 0.2s; }
-
-.btn-primary {
-    width: 100%; background: var(--accent); color: white;
-    padding: 14px; border-radius: 10px; font-size: 1rem; margin-top: 10px;
-}
-.btn-primary:hover { background: var(--accent-hover); }
-
-.btn-ghost { background: transparent; color: var(--text-light); }
-.btn-ghost:hover { color: var(--primary); }
-
-input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent); }
-
-/* =========================================================
-   4. CARDS, TICKETS E AVATARES
-   ========================================================= */
-.prof-card { 
-    display: flex; align-items: center; gap: 15px; 
-    background: var(--card-bg); padding: 18px; border-radius: 14px; 
-    margin-bottom: 15px; cursor: pointer; border: 1px solid var(--border-color); 
-    transition: all 0.2s ease; 
-}
-.prof-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.05); }
+.logo-img { height: 45px; width: auto; object-fit: contain; }
+.logo-fallback { font-family: 'Cinzel'; font-weight: 700; color: var(--accent); font-size: 1.8rem; }
 
 .avatar-box { 
-    width: 55px; height: 55px; background: #f1f5f9; border-radius: 50%; 
+    width: 50px; height: 50px; border-radius: 14px; 
+    background: linear-gradient(135deg, var(--accent), #a68b54); 
+    color: white; font-family: 'Cinzel'; font-weight: 700; 
     display: flex; align-items: center; justify-content: center; 
-    font-weight: 800; color: var(--primary); font-size: 1.2rem; 
+    box-shadow: 0 4px 10px rgba(192, 160, 98, 0.3);
 }
-.avatar-box.small { width: 40px; height: 40px; font-size: 1rem; }
+.avatar-box.large { width: 85px; height: 85px; font-size: 2rem; border-radius: 24px; margin-bottom: 15px; }
+.avatar-box.small { width: 40px; height: 40px; font-size: 0.9rem; border-radius: 10px; }
+
+.btn-action { 
+    background: var(--primary); color: white; border: none; 
+    padding: 18px; width: 100%; border-radius: 14px; 
+    font-weight: 700; cursor: pointer; transition: 0.3s; 
+    letter-spacing: 1px; text-transform: uppercase; font-size: 0.9rem;
+}
+.btn-action:hover { background: var(--accent); transform: translateY(-2px); }
+.btn-action:active { transform: scale(0.98); }
+
+.btn-ghost { 
+    background: #f8fafc; border: 1px solid #e2e8f0; 
+    color: var(--text-main); padding: 10px 18px; border-radius: 12px; 
+    font-size: 0.85rem; cursor: pointer; display: inline-flex; 
+    align-items: center; gap: 8px; font-weight: 700; transition: 0.2s;
+}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); background: white; }
+
+.input-box { 
+    width: 100%; padding: 16px; margin-bottom: 16px; 
+    border: 1px solid #e2e8f0; border-radius: 14px; 
+    background: #fcfcfc; font-size: 1rem; transition: 0.3s; 
+}
+.input-box:focus { border-color: var(--accent); background: white; box-shadow: 0 0 0 4px var(--accent-light); }
+
+.card { 
+    background: var(--surface); padding: 25px; 
+    border-radius: var(--radius); box-shadow: var(--shadow); 
+    margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.8);
+}
+
+.prof-card { 
+    background: white; border-radius: 18px; padding: 20px; 
+    margin-bottom: 15px; border: 1px solid #f1f5f9; 
+    display: flex; align-items: center; gap: 18px; 
+    cursor: pointer; transition: 0.3s var(--anim); 
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; overflow: hidden;
+}
+.prof-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: var(--accent-light); }
+.prof-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--accent); }
 
 .bk-ticket { 
-    display: flex; align-items: center; background: var(--card-bg); 
-    padding: 16px; border-radius: 14px; margin-bottom: 12px; 
-    border: 1px solid var(--border-color); gap: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    background: white; border-radius: 16px; padding: 20px; 
+    margin-bottom: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); 
+    border: 1px solid #f1f5f9; display: flex; justify-content: space-between; 
+    align-items: center; transition: 0.3s; 
 }
-.bk-bar { width: 4px; height: 45px; border-radius: 4px; }
+.bk-bar { width: 4px; height: 40px; border-radius: 10px; margin-right: 15px; }
+
 .bk-time-badge { 
-    display: inline-block; background: #f1f5f9; padding: 4px 10px; 
-    border-radius: 6px; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px; 
+    background: var(--primary); color: var(--accent); 
+    font-weight: 700; font-family: 'Cinzel'; padding: 6px 12px; 
+    border-radius: 8px; font-size: 0.9rem; margin-bottom: 6px; display: inline-block; 
 }
 
-/* =========================================================
-   5. GRID DE HORÁRIOS E BLOQUEIOS (MACA/GÊNERO)
-   ========================================================= */
-#grid-slots, #block-grid { 
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); 
-    gap: 12px; margin-top: 20px; margin-bottom: 20px;
-}
+/* GRID DE HORÁRIOS E BLOQUEIOS */
+.time-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 12px; margin-top: 15px; }
 .time-slot { 
-    background: var(--card-bg); border: 2px solid var(--border-color); 
-    padding: 14px 5px; text-align: center; border-radius: 10px; 
-    cursor: pointer; font-weight: 700; transition: 0.2s; font-size: 0.95rem;
+    padding: 15px 5px; text-align: center; border-radius: 12px; 
+    background: white; border: 1.5px solid #f1f5f9; 
+    font-size: 0.9rem; cursor: pointer; transition: 0.2s; 
+    color: var(--text-main); font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
 }
-.time-slot:hover:not(.blocked-prof):not(.blocked-male):not(.blocked-female) { 
-    border-color: var(--accent); color: var(--accent); background: #eff6ff;
+.time-slot:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.time-slot.selected { background: var(--primary); color: var(--accent); border-color: var(--primary); transform: scale(1.05); }
+.time-slot.blocked-female { background: var(--female-bg) !important; color: var(--female-color) !important; border-color: var(--female-border) !important; cursor: not-allowed; font-size: 0.7rem; }
+.time-slot.blocked-male { background: var(--male-bg) !important; color: var(--male-color) !important; border-color: var(--male-border) !important; cursor: not-allowed; font-size: 0.7rem; }
+.time-slot.blocked-prof { background: #f1f5f9; color: #cbd5e1; text-decoration: line-through; cursor: not-allowed; }
+
+/* REGRA NOVA: BLOQUEIO DA MACA */
+.time-slot.blocked-maca { background: #fee2e2 !important; color: #b91c1c !important; border-color: #f87171 !important; cursor: not-allowed; font-size: 0.7rem; line-height: 1.2; text-decoration: none;}
+
+/* MODAIS */
+.modal-overlay { 
+    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); 
+    z-index: 2000; display: none; align-items: center; 
+    justify-content: center; backdrop-filter: blur(6px); padding: 20px; 
 }
-.time-slot.selected { 
-    background: var(--accent); color: white; border-color: var(--accent); 
+.modal-box { 
+    background: white; padding: 35px; border-radius: 24px; 
+    width: 100%; max-width: 450px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); 
+    animation: modalSlide 0.4s var(--anim); max-height: 90vh; overflow-y: auto;
+}
+@keyframes modalSlide { from{opacity:0; transform:scale(0.9);} to{opacity:1; transform:scale(1);} }
+
+#toast { 
+    position: fixed; top: 30px; left: 50%; transform: translateX(-50%); 
+    background: var(--primary); color: white; padding: 16px 32px; 
+    border-radius: 50px; z-index: 3000; display: none; 
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); font-weight: 700; 
+    gap:12px; align-items:center; border: 1px solid var(--accent);
 }
 
-/* Regras de Bloqueios */
-.time-slot.blocked-prof { 
-    background: #f1f5f9; color: #94a3b8; cursor: not-allowed; border-color: #e2e8f0; 
+/* SIDEBAR ITEMS */
+.sidebar-item { 
+    padding: 16px 20px; cursor: pointer; color: #94a3b8; 
+    font-weight: 600; display: flex; align-items: center; 
+    gap: 15px; border-radius: 12px; margin-bottom: 8px; transition: 0.3s; 
 }
-.time-slot.blocked-male { 
-    background: #dbeafe !important; color: var(--male-color) !important; cursor: not-allowed !important; 
-    border-color: #bfdbfe !important; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; 
-}
-.time-slot.blocked-female { 
-    background: #fce7f3 !important; color: var(--female-color) !important; cursor: not-allowed !important; 
-    border-color: #fbcfe8 !important; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; 
-}
+.sidebar-item:hover { color: white; background: rgba(255,255,255,0.05); }
+.sidebar-item.active { background: var(--accent); color: var(--primary); box-shadow: 0 10px 15px -3px rgba(192, 160, 98, 0.4); }
 
-/* =========================================================
-   6. MODAIS (POP-UPS DE EDIÇÃO E AVISO)
-   ========================================================= */
-.modal {
-    display: none; /* Controlado pelo JS */
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
-    align-items: center; justify-content: center; z-index: 1000; padding: 20px;
-}
-.modal-content {
-    background: var(--card-bg); width: 100%; max-width: 450px;
-    padding: 25px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    max-height: 90vh; overflow-y: auto;
-}
+.nav-btn { color: #cbd5e1; cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.nav-btn i { font-size: 1.5rem; }
+.nav-btn span { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.nav-btn.active { color: var(--accent); }
 
-/* =========================================================
-   7. TAGS E ALERTAS (TOAST)
-   ========================================================= */
-.tag { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; display: inline-block; }
-.tag-m { background: #dbeafe; color: var(--male-color); }
-.tag-f { background: #fce7f3; color: var(--female-color); }
+.tag { padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; }
+.tag-f { background: var(--female-bg) !important; color: var(--female-color) !important; }
+.tag-m { background: var(--male-bg) !important; color: var(--male-color) !important; }
 
-#toast {
-    display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-    background: var(--primary); color: white; padding: 12px 24px;
-    border-radius: 30px; font-weight: 600; font-size: 0.9rem;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 9999;
-}
+.edit-btn { cursor: pointer; color: var(--accent); transition: 0.2s; margin-left: 8px; }
+.edit-btn:hover { transform: rotate(15deg) scale(1.2); }
 
-/* =========================================================
-   8. MENU NAVEGAÇÃO (BOTÕES SUPERIORES/INFERIORES)
-   ========================================================= */
-.nav-bar {
-    display: flex; gap: 10px; background: var(--card-bg); 
-    padding: 8px; border-radius: 12px; margin-bottom: 20px;
-    border: 1px solid var(--border-color);
-}
-.nav-btn {
-    flex: 1; padding: 12px; text-align: center; border-radius: 8px;
-    font-weight: 600; color: var(--text-light); transition: 0.2s; cursor: pointer;
-}
-.nav-btn.active { background: #f1f5f9; color: var(--primary); }
-
-/* Top header simples */
-.header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 15px 0; margin-bottom: 20px; border-bottom: 1px solid var(--border-color);
-}
+/* REGRA NOVA: CHECKBOX DA MACA */
+input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; accent-color: var(--accent); }
