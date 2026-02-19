@@ -1,223 +1,148 @@
 /* --- CONFIGURAÇÃO E ESTADO --- */
 let currentUser = null;
 let tempBk = {};
-let pendingCancelId = null;
 const TIMES = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'];
 
-/* --- UTILITÁRIOS --- */
 const getToday = () => new Date().toISOString().split('T')[0];
-const isPast = (d) => d < getToday();
 const fmtDate = (s) => s.split('-').reverse().join('/');
 const getInitials = (n) => n ? n.substring(0, 2).toUpperCase() : '??';
 
-/* --- BANCO DE DADOS (CONEXÃO D1 VIA API) --- */
-const DB = {
-    u: {
-        get: async () => {
-            const r = await fetch('/api/users');
-            return await r.json();
-        },
-        save: async (u) => {
-            await fetch('/api/users', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(u)
-            });
-        }
+/* --- CHAMADAS AO BANCO D1 (API) --- */
+const API = {
+    getUsers: async () => {
+        const r = await fetch('/api/users');
+        return await r.json();
     },
-    b: {
-        get: async () => {
-            const r = await fetch('/api/bookings');
-            return await r.json();
-        },
-        add: async (b) => {
-            await fetch('/api/bookings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(b)
-            });
-        },
-        delete: async (id) => {
-            await fetch(`/api/bookings?id=${id}`, { method: 'DELETE' });
-        }
+    // Esta função serve tanto para CRIAR quanto para EDITAR (devido ao REPLACE no SQL)
+    saveUser: async (userData) => {
+        const r = await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+        return await r.json();
+    },
+    deleteUser: async (id) => {
+        await fetch(`/api/users?id=${id}`, { method: 'DELETE' });
+    },
+    getBookings: async () => {
+        const r = await fetch('/api/bookings');
+        return await r.json();
     }
 };
 
-/* --- CORE: AUTENTICAÇÃO --- */
+/* --- AUTENTICAÇÃO --- */
 async function login() {
     const e = document.getElementById('login-email').value;
     const p = document.getElementById('login-pass').value;
     
-    const users = await DB.u.get();
-    const u = users.find(x => x.email === e && x.pass === p);
-    
-    if (u) {
-        currentUser = u;
-        document.getElementById('screen-auth').classList.add('hidden');
-        document.getElementById('screen-app').classList.remove('hidden');
-        updateUserUI();
-        loadView();
-    } else {
-        showToast('Dados inválidos no db_agenda_pcr');
+    try {
+        const users = await API.getUsers();
+        const u = users.find(x => x.email === e && x.pass === p);
+        
+        if (u) {
+            currentUser = u;
+            document.getElementById('screen-auth').classList.add('hidden');
+            document.getElementById('screen-app').classList.remove('hidden');
+            updateUserUI();
+            loadView();
+        } else {
+            alert("E-mail ou senha incorretos.");
+        }
+    } catch (err) {
+        alert("Erro ao conectar com o banco de dados.");
     }
 }
 
-async function register() {
-    const n = document.getElementById('reg-name').value;
-    const u = document.getElementById('reg-unit').value;
-    const g = document.getElementById('reg-gender').value;
-    const e = document.getElementById('reg-email').value;
-    const p = document.getElementById('reg-pass').value;
-
-    if (!n || !u || !e || !p) return showToast('Preencha tudo');
-
-    const newUser = { 
-        id: 'u' + Date.now(), 
-        name: n, unit: u, gender: g, email: e, pass: p, role: 'morador', desc: ''
-    };
-
-    await DB.u.save(newUser);
-    showToast('Sucesso! Entre agora.');
-    toggleAuth('login');
+/* --- PERFIL (EDITAR MEUS DADOS) --- */
+function openProfile() {
+    document.getElementById('prof-name').value = currentUser.name;
+    document.getElementById('prof-pass').value = currentUser.pass;
+    document.getElementById('modal-profile').style.display = 'flex';
 }
 
-/* --- INTERFACE DE USUÁRIO --- */
+async function saveProfile() {
+    const newName = document.getElementById('prof-name').value;
+    const newPass = document.getElementById('prof-pass').value;
+
+    if (!newName || !newPass) return alert("Preencha todos os campos");
+
+    // Criamos o objeto mantendo o ID e ROLE originais
+    const updatedData = {
+        ...currentUser,
+        name: newName,
+        pass: newPass
+    };
+
+    const res = await API.saveUser(updatedData);
+    if (res.success) {
+        currentUser = updatedData;
+        updateUserUI();
+        alert("Perfil atualizado com sucesso!");
+        document.getElementById('modal-profile').style.display = 'none';
+    }
+}
+
+/* --- ADMINISTRAÇÃO (CRIAR PROFISSIONAIS) --- */
+async function adminSaveUser() {
+    const role = document.getElementById('adm-role').value;
+    const idExistente = document.getElementById('adm-uid').value;
+
+    const u = {
+        id: idExistente || 'u' + Date.now(), // Se não tem ID, cria um novo
+        name: document.getElementById('adm-name').value,
+        email: document.getElementById('adm-email').value,
+        pass: document.getElementById('adm-pass').value,
+        role: role,
+        unit: document.getElementById('adm-unit').value,
+        gender: document.getElementById('adm-gender').value,
+        desc: role === 'prof' ? 'Especialista PCR' : ''
+    };
+
+    if (!u.name || !u.email || !u.pass) return alert("Nome, Email e Senha são obrigatórios.");
+
+    const res = await API.saveUser(u);
+    if (res.success) {
+        alert(role === 'prof' ? "Profissional salvo!" : "Usuário salvo!");
+        document.getElementById('modal-admin-user').style.display = 'none';
+        renderAdmin(); // Atualiza a lista na tela
+    }
+}
+
+async function renderAdmin() {
+    const users = await API.getUsers();
+    const list = document.getElementById('admin-user-list');
+    // Filtra para não mostrar o próprio admin na lista de edição comum
+    const filtered = users.filter(u => u.id !== currentUser.id);
+    
+    list.innerHTML = filtered.map(u => `
+        <div class="user-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee">
+            <div>
+                <strong>${u.name}</strong> <small>(${u.role})</small><br>
+                <span>${u.unit} | ${u.email}</span>
+            </div>
+            <div>
+                <button onclick="editUserPrompt('${u.id}')">Editar</button>
+                <button onclick="deleteUserAction('${u.id}')" style="color:red">Excluir</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+/* --- SUPORTE INTERFACE --- */
 function updateUserUI() {
     document.getElementById('user-name').innerText = currentUser.name.split(' ')[0];
-    document.getElementById('user-unit').innerText = currentUser.unit;
     document.getElementById('pc-user-name').innerText = currentUser.name;
-    document.getElementById('pc-user-unit').innerText = currentUser.unit + (currentUser.role === 'prof' ? ' (Prof)' : '');
-    document.getElementById('pc-avatar').innerText = getInitials(currentUser.name);
+    document.getElementById('pc-user-unit').innerText = currentUser.unit;
 }
 
-async function loadView() {
-    ['view-morador', 'view-prof', 'view-admin'].forEach(x => document.getElementById(x).classList.add('hidden'));
-    
-    if (currentUser.role === 'morador') {
-        document.getElementById('view-morador').classList.remove('hidden');
-        await renderProfs();
-        await renderMyBks();
-    } else if (currentUser.role === 'prof') {
-        document.getElementById('view-prof').classList.remove('hidden');
-        await renderProfAgenda();
-    } else {
-        document.getElementById('view-admin').classList.remove('hidden');
-        await renderAdmin();
-    }
-    switchTab('home');
+function loadView() {
+    const role = currentUser.role;
+    document.getElementById('view-admin').classList.toggle('hidden', role !== 'admin');
+    document.getElementById('view-morador').classList.toggle('hidden', role !== 'morador');
+    document.getElementById('view-prof').classList.toggle('hidden', role !== 'prof');
+
+    if (role === 'admin') renderAdmin();
 }
 
-/* --- LÓGICA DE AGENDAMENTO --- */
-async function renderProfs() {
-    const users = await DB.u.get();
-    const profs = users.filter(u => u.role === 'prof');
-    document.getElementById('list-profs').innerHTML = profs.map(p => `
-        <div class="prof-card" onclick="startBk('${p.id}')">
-            <div class="avatar-box">${getInitials(p.name)}</div>
-            <div style="flex:1">
-                <h3 style="margin:0">${p.name}</h3>
-                <p style="font-size:0.8rem; color:gray">${p.desc || 'Especialista'}</p>
-            </div>
-            <i class="fa-solid fa-chevron-right"></i>
-        </div>`).join('') || '<p>Nenhum profissional no banco.</p>';
-}
-
-async function startBk(pid) {
-    tempBk = { pid: pid };
-    const users = await DB.u.get();
-    const p = users.find(x => x.id === pid);
-    document.getElementById('sel-prof-name').innerText = p.name;
-    document.getElementById('date-picker').value = getToday();
-    document.getElementById('step-prof').classList.add('hidden');
-    document.getElementById('step-time').classList.remove('hidden');
-    await renderTimeGrid();
-}
-
-async function renderTimeGrid() {
-    const d = document.getElementById('date-picker').value;
-    const bks = await DB.b.get();
-    
-    document.getElementById('grid-slots').innerHTML = TIMES.map(t => {
-        const slot = bks.filter(b => b.date === d && b.time === t);
-        const isOccupied = slot.find(b => b.profId === tempBk.pid);
-        
-        if (isOccupied) return `<div class="time-slot blocked-prof">--</div>`;
-        return `<div class="time-slot" onclick="selTime('${t}',this)">${t}</div>`;
-    }).join('');
-}
-
-function selTime(t, el) {
-    document.querySelectorAll('.time-slot').forEach(x => x.classList.remove('selected'));
-    el.classList.add('selected');
-    tempBk.time = t;
-    document.getElementById('btn-confirm').classList.remove('hidden');
-}
-
-async function confirmBooking() {
-    const desc = document.getElementById('booking-desc').value || 'Atendimento';
-    const users = await DB.u.get();
-    const p = users.find(x => x.id === tempBk.pid);
-
-    const newBk = {
-        date: document.getElementById('date-picker').value,
-        time: tempBk.time,
-        profId: p.id,
-        profName: p.name,
-        clientId: currentUser.id,
-        clientName: currentUser.name,
-        clientUnit: currentUser.unit,
-        clientGender: currentUser.gender,
-        desc: desc,
-        type: 'appt'
-    };
-
-    await DB.b.add(newBk);
-    showToast('Agendado com sucesso!');
-    document.getElementById('step-time').classList.add('hidden');
-    document.getElementById('step-prof').classList.remove('hidden');
-    await renderMyBks();
-}
-
-/* --- COMPONENTES DE TICKET --- */
-function createTicket(b, del) {
-    return `
-    <div class="bk-ticket">
-        <div style="flex:1">
-            <div class="bk-time-badge">${b.time}</div>
-            <div style="font-weight:700">${b.profName}</div>
-            <div style="font-size:0.8rem">${fmtDate(b.date)} • ${b.desc}</div>
-        </div>
-        ${del ? `<button onclick="cancelBk(${b.id})" class="btn-del">Excluir</button>` : ''}
-    </div>`;
-}
-
-async function renderMyBks() {
-    const bks = await DB.b.get();
-    const my = bks.filter(b => b.clientId === currentUser.id);
-    document.getElementById('my-bookings-active').innerHTML = my.map(b => createTicket(b, true)).join('');
-}
-
-async function cancelBk(id) {
-    if (confirm("Deseja cancelar?")) {
-        await DB.b.delete(id);
-        showToast("Cancelado");
-        await loadView();
-    }
-}
-
-/* --- NAVEGAÇÃO BÁSICA --- */
-function switchTab(t) {
-    document.getElementById('tab-home').classList.toggle('hidden', t !== 'home');
-    document.getElementById('tab-calendar').classList.toggle('hidden', t !== 'calendar');
-}
-
-function toggleAuth(m) {
-    document.getElementById('form-login').classList.toggle('hidden', m !== 'login');
-    document.getElementById('form-reg').classList.toggle('hidden', m !== 'reg');
-}
-
-function showToast(m) { alert(m); }
 function logout() { location.reload(); }
-
-/* --- INIT --- */
-document.getElementById('date-picker').min = getToday();
