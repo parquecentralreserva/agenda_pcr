@@ -2,36 +2,36 @@
 let currentUser = null;
 let tempBk = {};
 let pendingCancelId = null;
-const TIMES = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+const TIMES = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'];
 
 /* --- UTILITÁRIOS --- */
 const getToday = () => new Date().toISOString().split('T')[0];
 const isPast = (d) => d < getToday();
 const fmtDate = (s) => s.split('-').reverse().join('/');
-const getInitials = (n) => n.substring(0, 2).toUpperCase();
+const getInitials = (n) => n ? n.substring(0, 2).toUpperCase() : '??';
 
-/* --- BANCO DE DADOS (SIMULADO / D1 READY) --- */
+/* --- BANCO DE DADOS (INTERFACE COM db_agenda_pcr) --- */
 const DB = {
     u: {
-        get: () => JSON.parse(localStorage.getItem('db_v27_u')) || [],
-        set: (d) => localStorage.setItem('db_v27_u', JSON.stringify(d))
+        get: () => JSON.parse(localStorage.getItem('db_pcr_users')) || [],
+        set: (d) => localStorage.setItem('db_pcr_users', JSON.stringify(d))
     },
     b: {
-        get: () => JSON.parse(localStorage.getItem('db_v27_b')) || [],
-        set: (d) => localStorage.setItem('db_v27_b', JSON.stringify(d))
+        get: () => JSON.parse(localStorage.getItem('db_pcr_bookings')) || [],
+        set: (d) => localStorage.setItem('db_pcr_bookings', JSON.stringify(d))
     },
     m: {
         add: (u, t) => {
-            let m = JSON.parse(localStorage.getItem('db_v27_m')) || [];
+            let m = JSON.parse(localStorage.getItem('db_pcr_msgs')) || [];
             m.push({ to: u, txt: t, read: false });
-            localStorage.setItem('db_v27_m', JSON.stringify(m));
+            localStorage.setItem('db_pcr_msgs', JSON.stringify(m));
         },
         get: (u) => {
-            let m = JSON.parse(localStorage.getItem('db_v27_m')) || [];
+            let m = JSON.parse(localStorage.getItem('db_pcr_msgs')) || [];
             const f = m.filter(x => x.to === u && !x.read);
             if (f.length) {
                 f.forEach(x => x.read = true);
-                localStorage.setItem('db_v27_m', JSON.stringify(m));
+                localStorage.setItem('db_pcr_msgs', JSON.stringify(m));
                 return f[0].txt;
             }
             return null;
@@ -40,16 +40,10 @@ const DB = {
 };
 
 function initDB() {
-    if (!localStorage.getItem('db_v27_u')) {
-        const users = [
-            { id: 'adm', name: 'Síndica', email: 'admin@condo.com', pass: '123', unit: 'ADM', gender: 'F', role: 'admin' },
-            { id: 'p1', name: 'Patrícia', email: 'pat@condo.com', pass: '123', unit: 'Externo', gender: 'F', role: 'prof', desc: 'Massagista e Terapeuta.' },
-            { id: 'p2', name: 'Carlos', email: 'carlos@condo.com', pass: '123', unit: 'Externo', gender: 'M', role: 'prof', desc: 'Barbeiro Clássico.' }
-        ];
-        DB.u.set(users);
-    }
-    if (!localStorage.getItem('db_v27_b')) DB.b.set([]);
-    if (!localStorage.getItem('db_v27_m')) localStorage.setItem('db_v27_m', JSON.stringify([]));
+    // Agora o initDB apenas garante que as estruturas existam, sem dados fixos.
+    if (!localStorage.getItem('db_pcr_users')) DB.u.set([]);
+    if (!localStorage.getItem('db_pcr_bookings')) DB.b.set([]);
+    if (!localStorage.getItem('db_pcr_msgs')) DB.m.set([]);
 }
 
 /* --- INTERFACE DE USUÁRIO (COMPONENTES) --- */
@@ -110,7 +104,7 @@ function login() {
             document.getElementById('alert-msg').innerText = msg;
             document.getElementById('modal-alert').style.display = 'flex';
         }
-    } else showToast('Dados inválidos');
+    } else showToast('Dados inválidos ou usuário inexistente');
 }
 
 function register() {
@@ -118,10 +112,13 @@ function register() {
         g = document.getElementById('reg-gender').value, e = document.getElementById('reg-email').value,
         p = document.getElementById('reg-pass').value;
     if (!n || !u || !g || !e || !p) return showToast('Preencha tudo');
+    
     let us = DB.u.get();
+    if (us.find(x => x.email === e)) return showToast('Email já cadastrado');
+
     us.push({ id: 'u' + Date.now(), name: n, unit: u, gender: g, email: e, pass: p, role: 'morador' });
     DB.u.set(us);
-    showToast('Sucesso! Entre.');
+    showToast('Sucesso! Entre com seu email e senha.');
     toggleAuth('login');
 }
 
@@ -190,9 +187,10 @@ function switchTab(t) {
 
 /* --- LOGICA MORADOR --- */
 function renderProfs() {
-    document.getElementById('list-profs').innerHTML = DB.u.get()
-        .filter(u => u.role === 'prof')
-        .map(p => createProfCard(p)).join('');
+    const profs = DB.u.get().filter(u => u.role === 'prof');
+    document.getElementById('list-profs').innerHTML = profs.length 
+        ? profs.map(p => createProfCard(p)).join('')
+        : '<p style="text-align:center; color:gray">Nenhum profissional cadastrado.</p>';
 }
 
 function startBk(pid) {
@@ -379,9 +377,13 @@ function toggleHistory(role) {
 
 function showToast(m) {
     const t = document.getElementById('toast');
-    document.getElementById('toast-msg').innerText = m;
-    t.style.display = 'flex';
-    setTimeout(() => t.style.display = 'none', 3000);
+    if(t) {
+        document.getElementById('toast-msg').innerText = m;
+        t.style.display = 'flex';
+        setTimeout(() => t.style.display = 'none', 3000);
+    } else {
+        alert(m);
+    }
 }
 
 /* --- INICIALIZAÇÃO --- */
