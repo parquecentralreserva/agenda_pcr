@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#1e293b">
+    <title>PCR | Luxury Reserve</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="toast"><i class="fa-solid fa-bell"></i> <span id="toast-msg">Notificação</span></div>
+
+<div id="modal-alert" class="modal-overlay">
+    <div class="modal-box" style="text-align:center">
+        <div style="width:70px; height:70px; background:var(--bg-body); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:20px; color:var(--accent)">
+            <i class="fa-solid fa-envelope-open-text fa-2xl"></i>
+        </div>
+        <h3 style="margin-bottom:12px">Aviso Importante</h3>
+        <p id="alert-msg" style="color:var(--text-light); margin-bottom:30px; line-height:1.7; font-size:1.1rem">...</p>
+        <button class="btn-action" onclick="document.getElementById('modal-alert').style.display='none'">Entendido</button>
+    </div>
+</div>
+
+<div id="modal-cancel" class="modal-overlay">
+    <div class="modal-box">
+        <h3 style="margin-bottom:15px; color:#ef4444"><i class="fa-solid fa-circle-exclamation"></i> Cancelar Reserva?</h3>
+        <p style="margin-bottom:20px; color:var(--text-light)">Esta ação não pode ser desfeita. Informe o motivo abaixo:</p>
+        <input type="text" id="cancel-reason" class="input-box" placeholder="Ex: Motivos de força maior...">
+        <div style="display:flex; gap:12px">
+            <button class="btn-action" style="background:#ef4444;" onclick="finalizeCancel()">Confirmar</button>
+            <button class="btn-ghost" style="width:100%; justify-content:center" onclick="closeCancelModal()">Voltar</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-profile" class="modal-overlay">
+    <div class="modal-box">
+        <h3 style="margin-bottom:25px;"><i class="fa-solid fa-user-gear"></i> Editar Meu Perfil</h3>
+        <label class="label-small">Nome Completo</label>
+        <input type="text" id="prof-name" class="input-box">
+        <label class="label-small">Alterar Senha</label>
+        <input type="password" id="prof-pass" class="input-box" placeholder="Mantenha vazio para não alterar">
+        <div style="display:flex; gap:12px; margin-top:15px">
+            <button class="btn-action" onclick="saveProfile()">Salvar Dados</button>
+            <button class="btn-ghost" style="width:100%; justify-content:center" onclick="document.getElementById('modal-profile').style.display='none'">Sair</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-admin-user" class="modal-overlay">
+    <div class="modal-box">
+        <h3 style="margin-bottom:25px"><i class="fa-solid fa-user-plus"></i> Gerenciar Conta</h3>
+        <input type="hidden" id="adm-uid">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px">
+            <input type="text" id="adm-name" class="input-box" placeholder="Nome">
+            <input type="text" id="adm-unit" class="input-box" placeholder="Unid">
+        </div>
+        <input type="email" id="adm-email" class="input-box" placeholder="Email de acesso">
+        <input type="password" id="adm-pass" class="input-box" placeholder="Senha">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px">
+            <select id="adm-role" class="input-box">
+                <option value="morador">Morador</option>
+                <option value="prof">Profissional</option>
+                <option value="admin">Administrador</option>
+            </select>
+            <select id="adm-gender" class="input-box">
+                <option value="M">Masculino</option>
+                <option value="F">Feminino</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:12px">
+            <button class="btn-action" onclick="adminSaveUser()">Salvar Usuário</button>
+            <button class="btn-ghost" style="width:100%; justify-content:center" onclick="document.getElementById('modal-admin-user').style.display='none'">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<div id="screen-auth">
+    <div class="card auth-card">
+        <div style="text-align:center; margin-bottom:35px">
+            <img src="https://kynto.com.br/pcr.png" onerror="this.style.display='none'; document.getElementById('login-logo-text').style.display='block'" class="logo-img-auth">
+            <div id="login-logo-text" class="logo-fallback" style="margin-bottom:10px; display:none">PCR</div>
+            <p class="brand-subtitle">Luxury Reserve</p>
+        </div>
+
+        <div class="auth-tabs">
+            <div id="tab-login-btn" class="auth-tab-btn active" onclick="toggleAuth('login')">ENTRAR</div>
+            <div id="tab-reg-btn" class="auth-tab-btn" onclick="toggleAuth('reg')">CADASTRAR</div>
+        </div>
+
+        <div id="form-login">
+            <input type="email" id="login-email" class="input-box" placeholder="E-mail">
+            <input type="password" id="login-pass" class="input-box" placeholder="Senha">
+            <button class="btn-action" onclick="login()">Acessar Painel</button>
+        </div>
+
+        <div id="form-reg" class="hidden">
+            <input type="text" id="reg-name" class="input-box" placeholder="Nome Completo">
+            <input type="text" id="reg-unit" class="input-box" placeholder="Unidade (Ex: 101)">
+            <select id="reg-gender" class="input-box">
+                <option value="" disabled selected>Selecione o Gênero</option>
+                <option value="M">Masculino</option>
+                <option value="F">Feminino</option>
+            </select>
+            <input type="email" id="reg-email" class="input-box" placeholder="E-mail">
+            <input type="password" id="reg-pass" class="input-box" placeholder="Crie sua senha">
+            <button class="btn-action" onclick="register()">Finalizar Cadastro</button>
+        </div>
+    </div>
+</div>
+
+<div id="screen-app" class="app-shell hidden">
+    <aside class="desktop-sidebar">
+        <div style="margin-bottom:50px; display:flex; align-items:center; gap:15px">
+            <img src="https://kynto.com.br/pcr.png" onerror="this.style.display='none'; document.getElementById('pc-logo-text').style.display='block'" class="logo-img" style="height:50px">
+            <div id="pc-logo-text" class="logo-fallback" style="font-size:1.8rem; display:none">PCR</div>
+        </div>
+        
+        <div class="sidebar-item active" id="sb-home" onclick="switchTab('home')"><i class="fa-solid fa-house-chimney"></i> Início</div>
+        <div class="sidebar-item" id="sb-cal" onclick="switchTab('calendar')"><i class="fa-solid fa-calendar-days"></i> Agenda Geral</div>
+        
+        <div class="sidebar-profile-box">
+            <div style="display:flex; align-items:center; gap:15px">
+                <div id="pc-avatar" class="avatar-box small"></div>
+                <div style="overflow: hidden;">
+                    <div class="user-name-pc">
+                        <span id="pc-user-name">User</span> 
+                        <i class="fa-solid fa-pen-to-square edit-btn" onclick="openProfile()"></i>
+                    </div>
+                    <small style="color:var(--accent)" id="pc-user-unit">Unit</small>
+                </div>
+            </div>
+            <div class="sidebar-item logout-btn" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sair da Conta</div>
+        </div>
+    </aside>
+
+    <div class="content-area">
+        <div class="mobile-header">
+            <div style="display:flex; align-items:center; gap:10px">
+                <img src="https://kynto.com.br/pcr.png" onerror="this.style.display='none'; document.getElementById('mob-logo-text').style.display='block'" class="logo-img" style="height:35px">
+                <div id="mob-logo-text" class="logo-fallback" style="font-size:1.3rem; color:var(--primary); display:none">PCR</div>
+            </div>
+            <div style="text-align:right">
+                <div style="font-weight:700; font-size:0.9rem">
+                    <span id="user-name">User</span>
+                    <i class="fa-solid fa-pen-to-square edit-btn" onclick="openProfile()"></i>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:flex-end; gap:5px">
+                    <small style="color:var(--text-light)" id="user-unit">Unit</small>
+                    <span id="gender-badge" class="tag"></span>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-home" class="fade-in">
+            <div id="view-morador" class="hidden">
+                <div id="step-prof">
+                    <div class="responsive-grid">
+                        <div>
+                            <h3 style="margin-bottom:20px;"><i class="fa-solid fa-star" style="color:var(--accent)"></i> Nossos Profissionais</h3>
+                            <div id="list-profs"></div>
+                        </div>
+                        <div>
+                            <div class="section-header">
+                                <h3><i class="fa-solid fa-calendar-check" style="color:var(--accent)"></i> Minhas Reservas</h3>
+                                <button class="btn-ghost" onclick="toggleHistory('morador')">Histórico</button>
+                            </div>
+                            <div id="my-bookings-active"></div>
+                            <div id="my-bookings-history" class="hidden"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="step-time" class="hidden fade-in" style="max-width:700px; margin:0 auto">
+                    <button class="btn-ghost" style="margin-bottom:25px" onclick="backToProfs()"><i class="fa-solid fa-chevron-left"></i> Voltar</button>
+                    <div class="card">
+                        <div style="text-align:center; margin-bottom:30px">
+                            <div id="sel-prof-avatar" class="avatar-box large" style="margin:0 auto"></div>
+                            <h2 style="color:var(--primary); margin-bottom:5px" id="sel-prof-name">Nome</h2>
+                            <p style="color:var(--text-light); font-size:0.95rem" id="sel-prof-desc">Desc</p>
+                        </div>
+                        <div class="booking-form-grid">
+                            <div>
+                                <label class="label-small-bold">Qual o serviço?</label>
+                                <input type="text" id="booking-desc" class="input-box" placeholder="Ex: Corte de Cabelo">
+                            </div>
+                            <div>
+                                <label class="label-small-bold">Para quando?</label>
+                                <input type="date" id="date-picker" class="input-box" onchange="renderTimeGrid()">
+                            </div>
+                        </div>
+                        <div class="time-selection-container">
+                            <div class="time-grid-label">HORÁRIOS DISPONÍVEIS</div>
+                            <div id="grid-slots" class="time-grid"></div>
+                        </div>
+                        <button id="btn-confirm" class="btn-action hidden" style="margin-top:30px" onclick="confirmBooking()">RESERVAR AGORA</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-prof" class="hidden">
+                <div class="responsive-grid">
+                    <div>
+                        <div class="card prof-management-card">
+                            <h3 style="color:var(--accent); margin-bottom:10px">Gestão de Horários</h3>
+                            <p style="opacity:0.8; font-size:0.9rem; margin-bottom:25px">Selecione uma data para bloquear seu atendimento.</p>
+                            <input type="date" id="block-date" class="input-box block-input" onchange="renderBlockTimes()">
+                            <div id="block-grid" class="time-grid"></div>
+                            <button class="btn-action block-btn" onclick="saveBlock()">Bloquear Selecionados</button>
+                        </div>
+                        <div style="margin-top:25px">
+                            <h4 class="label-section-prof">Meus Bloqueios Ativos</h4>
+                            <div id="prof-list-blocks"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="section-header">
+                            <h3>Agenda de Hoje</h3>
+                            <button class="btn-ghost" onclick="toggleHistory('prof')">Histórico</button>
+                        </div>
+                        <div id="prof-list-active"></div>
+                        <div id="prof-list-history" class="hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-admin" class="hidden">
+                <div class="responsive-grid">
+                    <div>
+                        <div class="section-header">
+                            <h3>Gestão de Pessoas</h3>
+                            <button class="btn-action btn-small-auto" onclick="adminEditUser(null)">+ Novo</button>
+                        </div>
+                        <input type="text" id="admin-search" class="input-box" placeholder="Procurar por nome ou unidade..." onkeyup="renderAdminUsers()">
+                        <div id="admin-user-list" class="admin-scroll-list"></div>
+                    </div>
+                    <div>
+                        <div class="section-header">
+                            <h3>Todas as Reservas</h3>
+                            <button class="btn-ghost" onclick="toggleHistory('admin')">Histórico</button>
+                        </div>
+                        <div id="admin-list-active"></div>
+                        <div id="admin-list-history" class="hidden"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-calendar" class="hidden fade-in">
+            <div class="card" style="max-width:900px; margin:0 auto">
+                <div style="text-align:center; margin-bottom:35px">
+                    <h3 style="font-size:1.8rem">Agenda Consolidada</h3>
+                    <p style="color:var(--text-light)">Visualize a ocupação total do espaço</p>
+                </div>
+                <input type="date" id="general-date" class="input-box center-input" onchange="renderGeneralCalendar()">
+                <div id="general-timeline" class="timeline-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mobile-nav">
+        <div class="nav-btn active" id="mn-home" onclick="switchTab('home')">
+            <i class="fa-solid fa-house"></i>
+            <span>Início</span>
+        </div>
+        <div class="nav-btn" id="mn-cal" onclick="switchTab('calendar')">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>Agenda</span>
+        </div>
+        <div class="nav-btn" onclick="logout()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Sair</span>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
