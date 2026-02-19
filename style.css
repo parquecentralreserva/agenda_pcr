@@ -1,100 +1,175 @@
-/* --- VARIÁVEIS DE CORES --- */
+/* =========================================================
+   1. VARIÁVEIS E RESET BÁSICO
+   ========================================================= */
 :root {
-    --primary: #0f172a;       /* Cor principal (texto escuro/títulos) */
-    --accent: #3b82f6;        /* Cor de destaque (Azul botões) */
-    --male-color: #2563eb;    /* Azul para tags masculinas */
-    --female-color: #ec4899;  /* Rosa para tags femininas */
-    --text-light: #64748b;    /* Cinza para textos secundários */
-    --bg-color: #f8fafc;      /* Fundo geral do app */
-    --card-bg: #ffffff;       /* Fundo dos cards brancos */
-    --border-color: #e2e8f0;  /* Cor das bordas */
+    --primary: #0f172a;       /* Azul Escuro (Textos principais) */
+    --accent: #3b82f6;        /* Azul Vivo (Botões e destaques) */
+    --accent-hover: #2563eb;  /* Azul Hover */
+    --male-color: #2563eb;    /* Azul Masculino */
+    --female-color: #ec4899;  /* Rosa Feminino */
+    --danger: #ef4444;        /* Vermelho (Exclusões) */
+    --text-light: #64748b;    /* Cinza (Textos secundários) */
+    --bg-color: #f8fafc;      /* Fundo geral da tela */
+    --card-bg: #ffffff;       /* Fundo de elementos brancos */
+    --border-color: #e2e8f0;  /* Linhas e bordas */
 }
 
-/* --- RESET BÁSICO --- */
-* { box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
-body { background: var(--bg-color); color: var(--primary); margin: 0; padding: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
+body { background: var(--bg-color); color: var(--primary); -webkit-font-smoothing: antialiased; }
+
+/* Classe utilitária essencial para o JS funcionar */
 .hidden { display: none !important; }
 
-/* --- TAGS (GÊNERO E AVISOS) --- */
-.tag { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; display: inline-block; }
-.tag-m { background: #dbeafe; color: var(--male-color); }
-.tag-f { background: #fce7f3; color: var(--female-color); }
+/* =========================================================
+   2. TELAS PRINCIPAIS E LAYOUT
+   ========================================================= */
+#screen-auth {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 20px;
+}
 
-/* --- CARDS DE PROFISSIONAIS E USUÁRIOS --- */
+.auth-box {
+    background: var(--card-bg); width: 100%; max-width: 400px;
+    padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+#screen-app {
+    display: flex; flex-direction: column; min-height: 100vh;
+}
+
+.main-container {
+    padding: 20px; max-width: 800px; margin: 0 auto; width: 100%;
+}
+
+/* =========================================================
+   3. FORMS, INPUTS E BOTÕES
+   ========================================================= */
+.input-field { 
+    width: 100%; padding: 14px; border: 1px solid var(--border-color); 
+    border-radius: 10px; margin-bottom: 12px; font-size: 1rem; 
+    background: #f8fafc; outline: none; transition: 0.2s;
+}
+.input-field:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+
+button { cursor: pointer; border: none; font-weight: 600; transition: 0.2s; }
+
+.btn-primary {
+    width: 100%; background: var(--accent); color: white;
+    padding: 14px; border-radius: 10px; font-size: 1rem; margin-top: 10px;
+}
+.btn-primary:hover { background: var(--accent-hover); }
+
+.btn-ghost { background: transparent; color: var(--text-light); }
+.btn-ghost:hover { color: var(--primary); }
+
+input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent); }
+
+/* =========================================================
+   4. CARDS, TICKETS E AVATARES
+   ========================================================= */
 .prof-card { 
     display: flex; align-items: center; gap: 15px; 
-    background: var(--card-bg); padding: 15px; border-radius: 12px; 
-    margin-bottom: 12px; cursor: pointer; border: 1px solid var(--border-color); 
+    background: var(--card-bg); padding: 18px; border-radius: 14px; 
+    margin-bottom: 15px; cursor: pointer; border: 1px solid var(--border-color); 
     transition: all 0.2s ease; 
 }
-.prof-card:hover { 
-    border-color: var(--accent); 
-    transform: translateY(-2px); 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
-}
+.prof-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.05); }
+
 .avatar-box { 
-    width: 50px; height: 50px; background: #f1f5f9; 
-    border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-    font-weight: bold; color: var(--primary); font-size: 1.2rem; 
+    width: 55px; height: 55px; background: #f1f5f9; border-radius: 50%; 
+    display: flex; align-items: center; justify-content: center; 
+    font-weight: 800; color: var(--primary); font-size: 1.2rem; 
 }
 .avatar-box.small { width: 40px; height: 40px; font-size: 1rem; }
 
-/* --- TICKETS DE AGENDAMENTO --- */
 .bk-ticket { 
     display: flex; align-items: center; background: var(--card-bg); 
-    padding: 15px; border-radius: 12px; margin-bottom: 12px; 
-    border: 1px solid var(--border-color); gap: 15px; 
+    padding: 16px; border-radius: 14px; margin-bottom: 12px; 
+    border: 1px solid var(--border-color); gap: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
-.bk-bar { width: 4px; height: 40px; border-radius: 4px; }
+.bk-bar { width: 4px; height: 45px; border-radius: 4px; }
 .bk-time-badge { 
-    display: inline-block; background: #f1f5f9; padding: 4px 8px; 
-    border-radius: 6px; font-weight: bold; font-size: 0.85rem; margin-bottom: 4px; 
+    display: inline-block; background: #f1f5f9; padding: 4px 10px; 
+    border-radius: 6px; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px; 
 }
 
-/* --- GRID DE HORÁRIOS --- */
+/* =========================================================
+   5. GRID DE HORÁRIOS E BLOQUEIOS (MACA/GÊNERO)
+   ========================================================= */
 #grid-slots, #block-grid { 
     display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); 
-    gap: 10px; margin-top: 15px; 
+    gap: 12px; margin-top: 20px; margin-bottom: 20px;
 }
 .time-slot { 
-    background: var(--card-bg); border: 1px solid var(--border-color); 
-    padding: 12px 5px; text-align: center; border-radius: 8px; 
-    cursor: pointer; font-weight: 600; transition: 0.2s; 
+    background: var(--card-bg); border: 2px solid var(--border-color); 
+    padding: 14px 5px; text-align: center; border-radius: 10px; 
+    cursor: pointer; font-weight: 700; transition: 0.2s; font-size: 0.95rem;
 }
 .time-slot:hover:not(.blocked-prof):not(.blocked-male):not(.blocked-female) { 
-    border-color: var(--accent); color: var(--accent); 
+    border-color: var(--accent); color: var(--accent); background: #eff6ff;
 }
 .time-slot.selected { 
     background: var(--accent); color: white; border-color: var(--accent); 
 }
 
-/* --- ESTADOS DE BLOQUEIO NOS HORÁRIOS --- */
+/* Regras de Bloqueios */
 .time-slot.blocked-prof { 
     background: #f1f5f9; color: #94a3b8; cursor: not-allowed; border-color: #e2e8f0; 
 }
 .time-slot.blocked-male { 
-    background: #dbeafe; color: var(--male-color); cursor: not-allowed; 
-    border-color: #bfdbfe; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; 
+    background: #dbeafe !important; color: var(--male-color) !important; cursor: not-allowed !important; 
+    border-color: #bfdbfe !important; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; 
 }
 .time-slot.blocked-female { 
-    background: #fce7f3; color: var(--female-color); cursor: not-allowed; 
-    border-color: #fbcfe8; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; 
+    background: #fce7f3 !important; color: var(--female-color) !important; cursor: not-allowed !important; 
+    border-color: #fbcfe8 !important; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; 
 }
 
-/* --- FORMULÁRIOS, INPUTS E BOTÕES --- */
-.input-field { 
-    width: 100%; padding: 12px; border: 1px solid var(--border-color); 
-    border-radius: 8px; margin-top: 6px; font-size: 1rem; outline: none; transition: 0.2s;
+/* =========================================================
+   6. MODAIS (POP-UPS DE EDIÇÃO E AVISO)
+   ========================================================= */
+.modal {
+    display: none; /* Controlado pelo JS */
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center; z-index: 1000; padding: 20px;
 }
-.input-field:focus { border-color: var(--accent); }
-
-.btn-ghost { 
-    background: transparent; border: none; cursor: pointer; 
-    color: var(--text-light); transition: 0.2s; 
+.modal-content {
+    background: var(--card-bg); width: 100%; max-width: 450px;
+    padding: 25px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    max-height: 90vh; overflow-y: auto;
 }
-.btn-ghost:hover { color: var(--primary); }
 
-/* Switch/Checkbox customizado para a Maca */
-input[type="checkbox"] { 
-    accent-color: var(--accent); width: 20px; height: 20px; cursor: pointer; 
+/* =========================================================
+   7. TAGS E ALERTAS (TOAST)
+   ========================================================= */
+.tag { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; display: inline-block; }
+.tag-m { background: #dbeafe; color: var(--male-color); }
+.tag-f { background: #fce7f3; color: var(--female-color); }
+
+#toast {
+    display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: var(--primary); color: white; padding: 12px 24px;
+    border-radius: 30px; font-weight: 600; font-size: 0.9rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 9999;
+}
+
+/* =========================================================
+   8. MENU NAVEGAÇÃO (BOTÕES SUPERIORES/INFERIORES)
+   ========================================================= */
+.nav-bar {
+    display: flex; gap: 10px; background: var(--card-bg); 
+    padding: 8px; border-radius: 12px; margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+}
+.nav-btn {
+    flex: 1; padding: 12px; text-align: center; border-radius: 8px;
+    font-weight: 600; color: var(--text-light); transition: 0.2s; cursor: pointer;
+}
+.nav-btn.active { background: #f1f5f9; color: var(--primary); }
+
+/* Top header simples */
+.header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 0; margin-bottom: 20px; border-bottom: 1px solid var(--border-color);
 }
