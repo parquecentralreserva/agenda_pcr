@@ -72,6 +72,14 @@
                 <option value="F">Feminino</option>
             </select>
         </div>
+        <div style="margin-top: 10px;">
+    <label>Descrição / Especialidade:</label>
+    <input type="text" id="adm-desc" placeholder="Ex: Manicure, Massagista..." class="input-field">
+</div>
+<div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="adm-maca" style="width: 20px; height: 20px;">
+    <label for="adm-maca" style="font-weight: bold; color: var(--primary);">Usa Sala com Maca?</label>
+</div>
         <div style="display:flex; gap:12px">
             <button class="btn-action" onclick="adminSaveUser()">Salvar Usuário</button>
             <button class="btn-ghost" style="width:100%; justify-content:center" onclick="document.getElementById('modal-admin-user').style.display='none'">Fechar</button>
