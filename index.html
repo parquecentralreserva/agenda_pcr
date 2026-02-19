@@ -8,6 +8,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -40,15 +41,16 @@
 <div id="modal-profile" class="modal-overlay">
     <div class="modal-box">
         <h3 style="margin-bottom:25px;"><i class="fa-solid fa-user-gear"></i> Editar Meu Perfil</h3>
-        <label class="label-small">Nome Completo</label>
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-light); text-transform:uppercase; margin-bottom:8px; display:block">Nome Completo</label>
         <input type="text" id="prof-name" class="input-box">
-        <label class="label-small">Alterar Senha</label>
+        
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-light); text-transform:uppercase; margin-bottom:8px; display:block">Especialidade / Descrição</label>
+        <input type="text" id="prof-desc" class="input-box" placeholder="Ex: Massagista, Manicure...">
+        
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-light); text-transform:uppercase; margin-bottom:8px; display:block">Alterar Senha</label>
         <input type="password" id="prof-pass" class="input-box" placeholder="Mantenha vazio para não alterar">
+        
         <div style="display:flex; gap:12px; margin-top:15px">
-            <div style="margin-top: 10px;">
-    <label>Minha Especialidade / Descrição:</label>
-    <input type="text" id="prof-desc" placeholder="Ex: Especialista em relaxamento..." class="input-field">
-</div>
             <button class="btn-action" onclick="saveProfile()">Salvar Dados</button>
             <button class="btn-ghost" style="width:100%; justify-content:center" onclick="document.getElementById('modal-profile').style.display='none'">Sair</button>
         </div>
@@ -65,25 +67,19 @@
         </div>
         <input type="email" id="adm-email" class="input-box" placeholder="Email de acesso">
         <input type="password" id="adm-pass" class="input-box" placeholder="Senha">
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px">
-            <select id="adm-role" class="input-box">
-                <option value="morador">Morador</option>
-                <option value="prof">Profissional</option>
-                <option value="admin">Administrador</option>
-            </select>
-            <select id="adm-gender" class="input-box">
-                <option value="M">Masculino</option>
-                <option value="F">Feminino</option>
-            </select>
+        
+        <input type="text" id="adm-desc" class="input-box" placeholder="Especialidade (Opcional)">
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
+            <select id="adm-role" class="input-box" style="margin-bottom:0"><option value="morador">Morador</option><option value="prof">Profissional</option><option value="admin">Administrador</option></select>
+            <select id="adm-gender" class="input-box" style="margin-bottom:0"><option value="M">Masculino</option><option value="F">Feminino</option></select>
         </div>
-        <div style="margin-top: 10px;">
-    <label>Descrição / Especialidade:</label>
-    <input type="text" id="adm-desc" placeholder="Ex: Manicure, Massagista..." class="input-field">
-</div>
-<div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
-    <input type="checkbox" id="adm-maca" style="width: 20px; height: 20px;">
-    <label for="adm-maca" style="font-weight: bold; color: var(--primary);">Usa Sala com Maca?</label>
-</div>
+        
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom: 25px; background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <input type="checkbox" id="adm-maca">
+            <label for="adm-maca" style="font-weight:700; font-size:0.9rem; color:var(--text-main); cursor:pointer">Usa Sala com Maca?</label>
+        </div>
+
         <div style="display:flex; gap:12px">
             <button class="btn-action" onclick="adminSaveUser()">Salvar Usuário</button>
             <button class="btn-ghost" style="width:100%; justify-content:center" onclick="document.getElementById('modal-admin-user').style.display='none'">Fechar</button>
@@ -91,17 +87,17 @@
     </div>
 </div>
 
-<div id="screen-auth">
-    <div class="card auth-card">
+<div id="screen-auth" style="width:100%; min-height:100vh; display:flex; justify-content:center; align-items:center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 20px;">
+    <div class="card" style="width:100%; max-width:420px; padding:45px; border:none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
         <div style="text-align:center; margin-bottom:35px">
-            <img src="https://kynto.com.br/pcr.png" onerror="this.style.display='none'; document.getElementById('login-logo-text').style.display='block'" class="logo-img-auth">
+            <img src="https://kynto.com.br/pcr.png" onerror="this.style.display='none'; document.getElementById('login-logo-text').style.display='block'" class="logo-img" style="height:70px; margin-bottom:15px">
             <div id="login-logo-text" class="logo-fallback" style="margin-bottom:10px; display:none">PCR</div>
-            <p class="brand-subtitle">Luxury Reserve</p>
+            <p style="letter-spacing:4px; font-size:0.75rem; color:var(--accent); text-transform:uppercase; font-weight:700">Luxury Reserve</p>
         </div>
 
-        <div class="auth-tabs">
-            <div id="tab-login-btn" class="auth-tab-btn active" onclick="toggleAuth('login')">ENTRAR</div>
-            <div id="tab-reg-btn" class="auth-tab-btn" onclick="toggleAuth('reg')">CADASTRAR</div>
+        <div style="display:flex; margin-bottom:30px; background:#f1f5f9; padding:6px; border-radius:14px">
+            <div id="tab-login-btn" style="flex:1; padding:12px; text-align:center; border-radius:10px; font-weight:700; cursor:pointer; background:white; color:var(--primary); box-shadow:0 4px 10px rgba(0,0,0,0.05)" onclick="toggleAuth('login')">ENTRAR</div>
+            <div id="tab-reg-btn" style="flex:1; padding:12px; text-align:center; border-radius:10px; cursor:pointer; color:var(--text-light); font-weight:700" onclick="toggleAuth('reg')">CADASTRAR</div>
         </div>
 
         <div id="form-login">
@@ -126,6 +122,7 @@
 </div>
 
 <div id="screen-app" class="app-shell hidden">
+    
     <aside class="desktop-sidebar">
         <div style="margin-bottom:50px; display:flex; align-items:center; gap:15px">
             <img src="https://kynto.com.br/pcr.png" onerror="this.style.display='none'; document.getElementById('pc-logo-text').style.display='block'" class="logo-img" style="height:50px">
@@ -135,22 +132,23 @@
         <div class="sidebar-item active" id="sb-home" onclick="switchTab('home')"><i class="fa-solid fa-house-chimney"></i> Início</div>
         <div class="sidebar-item" id="sb-cal" onclick="switchTab('calendar')"><i class="fa-solid fa-calendar-days"></i> Agenda Geral</div>
         
-        <div class="sidebar-profile-box">
+        <div style="margin-top:auto; padding:25px; background: rgba(255,255,255,0.03); border-radius: 20px;">
             <div style="display:flex; align-items:center; gap:15px">
                 <div id="pc-avatar" class="avatar-box small"></div>
                 <div style="overflow: hidden;">
-                    <div class="user-name-pc">
+                    <div style="font-weight:700; font-size:0.95rem; white-space: nowrap; text-overflow: ellipsis;">
                         <span id="pc-user-name">User</span> 
                         <i class="fa-solid fa-pen-to-square edit-btn" onclick="openProfile()"></i>
                     </div>
                     <small style="color:var(--accent)" id="pc-user-unit">Unit</small>
                 </div>
             </div>
-            <div class="sidebar-item logout-btn" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sair da Conta</div>
+            <div class="sidebar-item" onclick="logout()" style="color:#ef4444; margin-top:20px; padding:0; background:none"><i class="fa-solid fa-right-from-bracket"></i> Sair da Conta</div>
         </div>
     </aside>
 
     <div class="content-area">
+        
         <div class="mobile-header">
             <div style="display:flex; align-items:center; gap:10px">
                 <img src="https://kynto.com.br/pcr.png" onerror="this.style.display='none'; document.getElementById('mob-logo-text').style.display='block'" class="logo-img" style="height:35px">
@@ -169,6 +167,7 @@
         </div>
 
         <div id="tab-home" class="fade-in">
+            
             <div id="view-morador" class="hidden">
                 <div id="step-prof">
                     <div class="responsive-grid">
@@ -177,7 +176,7 @@
                             <div id="list-profs"></div>
                         </div>
                         <div>
-                            <div class="section-header">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center">
                                 <h3><i class="fa-solid fa-calendar-check" style="color:var(--accent)"></i> Minhas Reservas</h3>
                                 <button class="btn-ghost" onclick="toggleHistory('morador')">Histórico</button>
                             </div>
@@ -189,26 +188,30 @@
 
                 <div id="step-time" class="hidden fade-in" style="max-width:700px; margin:0 auto">
                     <button class="btn-ghost" style="margin-bottom:25px" onclick="backToProfs()"><i class="fa-solid fa-chevron-left"></i> Voltar</button>
+                    
                     <div class="card">
                         <div style="text-align:center; margin-bottom:30px">
                             <div id="sel-prof-avatar" class="avatar-box large" style="margin:0 auto"></div>
                             <h2 style="color:var(--primary); margin-bottom:5px" id="sel-prof-name">Nome</h2>
                             <p style="color:var(--text-light); font-size:0.95rem" id="sel-prof-desc">Desc</p>
                         </div>
-                        <div class="booking-form-grid">
+                        
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px">
                             <div>
-                                <label class="label-small-bold">Qual o serviço?</label>
+                                <label style="font-size:0.7rem; font-weight:800; color:var(--text-light); text-transform:uppercase; margin-left:5px">Qual o serviço?</label>
                                 <input type="text" id="booking-desc" class="input-box" placeholder="Ex: Corte de Cabelo">
                             </div>
                             <div>
-                                <label class="label-small-bold">Para quando?</label>
+                                <label style="font-size:0.7rem; font-weight:800; color:var(--text-light); text-transform:uppercase; margin-left:5px">Para quando?</label>
                                 <input type="date" id="date-picker" class="input-box" onchange="renderTimeGrid()">
                             </div>
                         </div>
-                        <div class="time-selection-container">
-                            <div class="time-grid-label">HORÁRIOS DISPONÍVEIS</div>
+                        
+                        <div style="background:var(--bg-body); padding:25px; border-radius:18px; margin-top:10px">
+                            <div style="text-align:center; font-size:0.75rem; font-weight:800; color:var(--text-light); margin-bottom:20px; letter-spacing:2px">HORÁRIOS DISPONÍVEIS</div>
                             <div id="grid-slots" class="time-grid"></div>
                         </div>
+                        
                         <button id="btn-confirm" class="btn-action hidden" style="margin-top:30px" onclick="confirmBooking()">RESERVAR AGORA</button>
                     </div>
                 </div>
@@ -217,20 +220,20 @@
             <div id="view-prof" class="hidden">
                 <div class="responsive-grid">
                     <div>
-                        <div class="card prof-management-card">
+                        <div class="card" style="background:linear-gradient(135deg, var(--primary), #1e293b); color:white; border:none">
                             <h3 style="color:var(--accent); margin-bottom:10px">Gestão de Horários</h3>
                             <p style="opacity:0.8; font-size:0.9rem; margin-bottom:25px">Selecione uma data para bloquear seu atendimento.</p>
-                            <input type="date" id="block-date" class="input-box block-input" onchange="renderBlockTimes()">
+                            <input type="date" id="block-date" class="input-box" style="border:none; height:55px; background:rgba(255,255,255,0.1); color:white" onchange="renderBlockTimes()">
                             <div id="block-grid" class="time-grid"></div>
-                            <button class="btn-action block-btn" onclick="saveBlock()">Bloquear Selecionados</button>
+                            <button class="btn-action" style="margin-top:25px; background:var(--accent); color:var(--primary)" onclick="saveBlock()">Bloquear Selecionados</button>
                         </div>
                         <div style="margin-top:25px">
-                            <h4 class="label-section-prof">Meus Bloqueios Ativos</h4>
+                            <h4 style="color:var(--text-light); font-size:0.8rem; text-transform:uppercase; margin-bottom:15px">Meus Bloqueios Ativos</h4>
                             <div id="prof-list-blocks"></div>
                         </div>
                     </div>
                     <div>
-                        <div class="section-header">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center">
                             <h3>Agenda de Hoje</h3>
                             <button class="btn-ghost" onclick="toggleHistory('prof')">Histórico</button>
                         </div>
@@ -243,15 +246,15 @@
             <div id="view-admin" class="hidden">
                 <div class="responsive-grid">
                     <div>
-                        <div class="section-header">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:20px">
                             <h3>Gestão de Pessoas</h3>
-                            <button class="btn-action btn-small-auto" onclick="adminEditUser(null)">+ Novo</button>
+                            <button class="btn-action" style="width:auto; padding:10px 20px" onclick="adminEditUser(null)">+ Novo</button>
                         </div>
                         <input type="text" id="admin-search" class="input-box" placeholder="Procurar por nome ou unidade..." onkeyup="renderAdminUsers()">
-                        <div id="admin-user-list" class="admin-scroll-list"></div>
+                        <div id="admin-user-list" style="max-height:500px; overflow-y:auto; padding-right:10px"></div>
                     </div>
                     <div>
-                        <div class="section-header">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:20px">
                             <h3>Todas as Reservas</h3>
                             <button class="btn-ghost" onclick="toggleHistory('admin')">Histórico</button>
                         </div>
@@ -268,10 +271,11 @@
                     <h3 style="font-size:1.8rem">Agenda Consolidada</h3>
                     <p style="color:var(--text-light)">Visualize a ocupação total do espaço</p>
                 </div>
-                <input type="date" id="general-date" class="input-box center-input" onchange="renderGeneralCalendar()">
-                <div id="general-timeline" class="timeline-container"></div>
+                <input type="date" id="general-date" class="input-box" style="max-width:320px; margin:0 auto 30px auto; display:block; text-align:center" onchange="renderGeneralCalendar()">
+                <div id="general-timeline" style="border-top: 1.5px solid #f1f5f9; padding-top:10px"></div>
             </div>
         </div>
+
     </div>
 
     <div class="mobile-nav">
@@ -291,5 +295,6 @@
 </div>
 
 <script src="script.js"></script>
+
 </body>
 </html>
