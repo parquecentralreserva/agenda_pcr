@@ -1,46 +1,34 @@
-/* --- CONFIGURAÇÃO E ESTADO --- */
-let currentUser = null, tempBk = {}, pendingCancelId = null;
-const TIMES = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+/* --- CONEXÃO COM O BANCO D1 (API) --- */
+const API = {
+    u: {
+        get: async () => { try { const r = await fetch('/api/users'); return await r.json(); } catch(e) { return []; } },
+        save: async (d) => { await fetch('/api/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(d) }); },
+        del: async (id) => { await fetch(`/api/users?id=${id}`, { method: 'DELETE' }); }
+    },
+    b: {
+        get: async () => { try { const r = await fetch('/api/bookings'); return await r.json(); } catch(e) { return []; } },
+        save: async (d) => { await fetch('/api/bookings', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(d) }); },
+        del: async (id) => { await fetch(`/api/bookings?id=${id}`, { method: 'DELETE' }); }
+    }
+};
+
+/* Mensagens no LocalStorage (Não mudou) */
+const DB_MSG = { 
+    add: (u, t) => { let m = JSON.parse(localStorage.getItem('db_v27_m')) || []; m.push({to: u, txt: t, read: false}); localStorage.setItem('db_v27_m', JSON.stringify(m)); },
+    get: (u) => { let m = JSON.parse(localStorage.getItem('db_v27_m')) || []; const f = m.filter(x => x.to === u && !x.read); if(f.length){ f.forEach(x => x.read = true); localStorage.setItem('db_v27_m', JSON.stringify(m)); return f[0].txt; } return null; }
+};
+
+/* --- ESTADO E SESSÃO --- */
+let currentUser = JSON.parse(sessionStorage.getItem('pcr_user')) || null;
+let tempBk = {}, pendingCancelId = null;
+const TIMES = ['09:00','10:00','11:00','13:00','14:00','15:00','16:00','17:00','18:00'];
+
 const getToday = () => new Date().toISOString().split('T')[0];
 const isPast = (d) => d < getToday();
 const fmtDate = (s) => s.split('-').reverse().join('/');
 const getInitials = (n) => n ? n.substring(0, 2).toUpperCase() : '??';
 
-/* --- CONEXÃO COM O BANCO DE DADOS D1 (API) --- */
-const API = {
-    u: {
-        get: async () => {
-            try { const r = await fetch('/api/users'); return await r.json(); } catch(e) { return []; }
-        },
-        save: async (d) => {
-            await fetch('/api/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(d) });
-        },
-        del: async (id) => {
-            await fetch(`/api/users?id=${id}`, { method: 'DELETE' });
-        }
-    },
-    b: {
-        get: async () => {
-            try { const r = await fetch('/api/bookings'); return await r.json(); } catch(e) { return []; }
-        },
-        save: async (d) => {
-            await fetch('/api/bookings', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(d) });
-        },
-        del: async (id) => {
-            await fetch(`/api/bookings?id=${id}`, { method: 'DELETE' });
-        }
-    }
-};
-
-/* Sistema de Notificações mantido no LocalStorage para não exigir nova tabela agora */
-const DB = {
-    m: { 
-        add: (u, t) => { let m = JSON.parse(localStorage.getItem('db_v27_m')) || []; m.push({to: u, txt: t, read: false}); localStorage.setItem('db_v27_m', JSON.stringify(m)); },
-        get: (u) => { let m = JSON.parse(localStorage.getItem('db_v27_m')) || []; const f = m.filter(x => x.to === u && !x.read); if(f.length){ f.forEach(x => x.read = true); localStorage.setItem('db_v27_m', JSON.stringify(m)); return f[0].txt; } return null; }
-    }
-};
-
-/* --- ELEMENTOS UI ORIGINAIS --- */
+/* --- FUNÇÕES VISUAIS E COMPONENTES --- */
 function createProfCard(p) {
     const color = p.gender === 'M' ? 'var(--male-color)' : 'var(--female-color)';
     return `
@@ -78,7 +66,7 @@ function toggleAuth(m) {
     document.getElementById('tab-reg-btn').style = m === 'reg' ? "background:white; color:var(--primary); box-shadow:0 4px 10px rgba(0,0,0,0.05)" : "background:transparent; color:#999";
 }
 
-/* --- CORE: AUTENTICAÇÃO E PERFIL --- */
+/* --- AUTENTICAÇÃO E PERFIL --- */
 async function login() {
     const e = document.getElementById('login-email').value, p = document.getElementById('login-pass').value;
     const users = await API.u.get();
@@ -86,6 +74,8 @@ async function login() {
     
     if(u) {
         currentUser = u; 
+        sessionStorage.setItem('pcr_user', JSON.stringify(u)); 
+        
         document.getElementById('screen-auth').classList.add('hidden'); 
         document.getElementById('screen-app').classList.remove('hidden');
         updateUserUI();
@@ -98,11 +88,8 @@ async function login() {
         
         await loadView();
         
-        const m = DB.m.get(u.id); 
-        if(m) {
-            document.getElementById('alert-msg').innerText = m;
-            document.getElementById('modal-alert').style.display = 'flex';
-        }
+        const m = DB_MSG.get(u.id); 
+        if(m) { document.getElementById('alert-msg').innerText = m; document.getElementById('modal-alert').style.display='flex'; }
     } else showToast('Dados inválidos');
 }
 
@@ -110,8 +97,8 @@ async function register() {
     const n = document.getElementById('reg-name').value, u = document.getElementById('reg-unit').value, 
           g = document.getElementById('reg-gender').value, e = document.getElementById('reg-email').value, 
           p = document.getElementById('reg-pass').value;
-    
-    if(!n || !u || !g || !e || !p) return showToast('Preencha tudo');
+          
+    if(!n||!u||!g||!e||!p) return showToast('Preencha tudo');
     
     const newUser = { id: 'u' + Date.now(), name: n, unit: u, gender: g, email: e, pass: p, role: 'morador', desc: '', maca: 0 };
     await API.u.save(newUser);
@@ -120,11 +107,14 @@ async function register() {
     toggleAuth('login');
 }
 
-function logout() { location.reload(); }
+function logout() { 
+    sessionStorage.removeItem('pcr_user'); 
+    location.reload(); 
+}
 
 function openProfile() {
     document.getElementById('prof-name').value = currentUser.name;
-    document.getElementById('prof-pass').value = currentUser.pass;
+    document.getElementById('prof-pass').value = '';
     const descInput = document.getElementById('prof-desc');
     if(descInput) descInput.value = currentUser.desc || '';
     document.getElementById('modal-profile').style.display = 'flex';
@@ -142,6 +132,7 @@ async function saveProfile() {
     currentUser.desc = newDesc;
     
     await API.u.save(currentUser);
+    sessionStorage.setItem('pcr_user', JSON.stringify(currentUser)); 
     updateUserUI();
     showToast("Perfil atualizado!");
     document.getElementById('modal-profile').style.display = 'none';
@@ -155,7 +146,7 @@ function updateUserUI() {
     document.getElementById('pc-avatar').innerText = getInitials(currentUser.name);
 }
 
-/* --- NAVEGAÇÃO --- */
+/* --- NAVEGAÇÃO E VIEWS --- */
 async function loadView() {
     ['view-morador','view-prof','view-admin'].forEach(x => document.getElementById(x).classList.add('hidden'));
     
@@ -179,15 +170,17 @@ async function switchTab(t) {
     document.querySelectorAll('.nav-btn, .sidebar-item').forEach(x => x.classList.remove('active'));
     const mbtn = document.getElementById('mn-'+(t === 'home' ? 'home' : 'cal')); if(mbtn) mbtn.classList.add('active');
     const sbtn = document.getElementById('sb-'+(t === 'home' ? 'home' : 'cal')); if(sbtn) sbtn.classList.add('active');
+    
     document.getElementById('tab-home').classList.toggle('hidden', t !== 'home');
     document.getElementById('tab-calendar').classList.toggle('hidden', t !== 'calendar');
+    
     if(t === 'calendar') { 
         document.getElementById('general-date').value = getToday(); 
         await renderGeneralCalendar(); 
     }
 }
 
-/* --- VISÃO: MORADOR --- */
+/* --- MORADOR: AGENDAMENTO --- */
 async function renderProfs() { 
     const users = await API.u.get();
     document.getElementById('list-profs').innerHTML = users.filter(u => u.role === 'prof').map(p => createProfCard(p)).join(''); 
@@ -223,27 +216,23 @@ async function renderTimeGrid() {
     document.getElementById('grid-slots').innerHTML = TIMES.map(t => {
         const slot = bks.filter(b => b.date === d && b.time === t);
         
-        // 1. O profissional escolhido já está ocupado?
         if(slot.find(b => b.profId === p.id)) return `<div class="time-slot blocked-prof">--</div>`;
         
-        // 2. REGRA DA MACA: Se o profissional escolhido usa maca, checar se a sala com maca está ocupada
+        // REGRA DA MACA
         if(p.maca === 1) {
             const macaOcupada = slot.some(b => {
-                if (b.type !== 'appt') return false; // Ignora bloqueios sem cliente
+                if (b.type !== 'appt') return false; 
                 const profDoAgendamento = users.find(u => u.id === b.profId);
                 return profDoAgendamento && profDoAgendamento.maca === 1;
             });
-            if(macaOcupada) return `<div class="time-slot" style="background:#fca5a5; color:#7f1d1d; cursor:not-allowed; border: 1px solid #f87171;">MACA EM USO</div>`;
+            if(macaOcupada) return `<div class="time-slot blocked-maca">MACA<br>EM USO</div>`;
         }
 
-        // 3. REGRA DE GÊNERO
         const act = slot.find(b => b.type === 'appt');
         if(act && act.clientGender !== currentUser.gender) return `<div class="time-slot ${act.clientGender === 'M' ? 'blocked-male' : 'blocked-female'}">${act.clientGender === 'M' ? 'USO MASC' : 'USO FEM'}</div>`;
         
-        // 4. Bloqueios manuais
         if(slot.find(b => b.type === 'block')) return `<div class="time-slot blocked-prof">BLOQ</div>`;
         
-        // 5. Livre
         return `<div class="time-slot" onclick="selTime('${t}',this)">${t}</div>`;
     }).join('');
 }
@@ -282,7 +271,7 @@ async function renderMyBks() {
     document.getElementById('my-bookings-history').innerHTML = his.map(b => createTicket(b, false)).join('');
 }
 
-/* --- VISÃO: PROFISSIONAL --- */
+/* --- PROFISSIONAL E BLOQUEIOS --- */
 async function renderBlockTimes() {
     const d = document.getElementById('block-date').value;
     const bks = await API.b.get();
@@ -323,7 +312,7 @@ async function renderProfAgenda() {
     document.getElementById('prof-list-history').innerHTML = all.filter(b => isPast(b.date) && b.type === 'appt').map(b => createTicket(b, false)).join('');
 }
 
-/* --- VISÃO: ADMIN --- */
+/* --- ADMIN --- */
 async function renderAdminUsers() {
     const s = document.getElementById('admin-search').value.toLowerCase();
     const users = await API.u.get();
@@ -334,7 +323,7 @@ async function renderAdminUsers() {
             <div style="display:flex; gap:12px; align-items:center">
                 <div class="avatar-box small">${getInitials(x.name)}</div>
                 <div>
-                    <b style="font-size:0.95rem">${x.name}</b> ${x.maca === 1 ? '<span style="font-size:10px; background:#fee2e2; color:#b91c1c; padding:2px 4px; border-radius:4px; margin-left:4px">MACA</span>' : ''}<br>
+                    <b style="font-size:0.95rem">${x.name}</b> ${x.maca === 1 ? '<span class="maca-badge">MACA</span>' : ''}<br>
                     <small style="color:var(--accent)">${x.unit} • ${x.role.toUpperCase()}</small>
                 </div>
             </div>
@@ -435,7 +424,7 @@ async function doCancel(id, r) {
     let bk = bks.find(x => String(x.id) === String(id));
     
     if(bk && bk.type === 'appt' && currentUser.role !== 'morador') {
-        DB.m.add(bk.clientId, `Reserva cancelada. ${r ? 'Motivo: ' + r : ''}`);
+        DB_MSG.add(bk.clientId, `Reserva cancelada. ${r ? 'Motivo: ' + r : ''}`);
     }
     
     await API.b.del(id);
@@ -443,7 +432,7 @@ async function doCancel(id, r) {
     await loadView();
 }
 
-/* --- AGENDA GERAL (CALENDÁRIO ABA) --- */
+/* --- AGENDA GERAL --- */
 async function renderGeneralCalendar() {
     const d = document.getElementById('general-date').value;
     const bks = await API.b.get();
@@ -472,3 +461,15 @@ function showToast(m) {
 /* --- INICIALIZAÇÃO --- */
 document.getElementById('date-picker').min = getToday();
 document.getElementById('block-date').min = getToday();
+
+if(currentUser) {
+    document.getElementById('screen-auth').classList.add('hidden'); 
+    document.getElementById('screen-app').classList.remove('hidden');
+    updateUserUI();
+    if(currentUser.role === 'morador') {
+        const gb = document.getElementById('gender-badge'); 
+        gb.innerText = currentUser.gender === 'M' ? 'MASC' : 'FEM'; 
+        gb.className = `tag ${currentUser.gender === 'M' ? 'tag-m' : 'tag-f'}`;
+    }
+    loadView();
+}
